@@ -10,3 +10,8 @@ jobs:
         uses: dante-ev/latex-action@latest
         with:
           root_file: main.tex
+      - name: Upload LaTeX document as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: notes.pdf
+          path: main.pdf
