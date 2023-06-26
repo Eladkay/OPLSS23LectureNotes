@@ -5,4 +5,163 @@
 	Coq is an interactive theorem prover that can be used to develop mechanized proofs of correctness for software systems. It uses dependent types and proof tactics to state and prove theorems about functional programs. This course will introduce Coq and the basics of interactive theorem provers through hands-on exercises and labs based on the Software Foundations curriculum.
 \end{abstract}
 
+\subsection{Overview}
+\textbf{Formal Methods}: Mathematically rigorous techniques for the specification, development, analysis and verification
+of software and hardware systems. For example, type systems, program modeling and static analysis.
 
+\textbf{Formal Verification}: Mahcine-checked proof of the correctness of a software or hardware system with respect
+to a certain formal specification or property. For example, automated theorem provers like SMT solvers and interactive
+proof assistants that rely on logics like first-order logic (ACL2), higher order logic (Isabelle) or dependent types (Coq, Lean, Agda, etc).
+
+We are interested in two questions: 
+\begin{enumerate}
+\item Do programs match their specifications?
+\item Are proofs about those specifications correct/
+\end{enumerate}
+
+Coq was developed by Thiery Coquand based on his Calculus of (Inductive) Constructions. It is mainly maintained by researchers at Inria in
+France. Coq is written in OCaml.
+
+Coq theorem proving includes three parts: the first part is the program execution model, which is similar to other functional languages
+with dependent types. The second part is the specification which consists of preconditions and postconditions, semantics preservation theorems
+and other properties (like in-bounds array access). The third part ties the two together and consists of theorems and ways to prove them.
+
+\subsection{Coq Basics}
+We can define an inductive datatype, as is typical in function languages, with the keyword \lstinline{Inductive}.
+For example, the natural numbers can be defined as:
+\lstlisting{
+	Inductive nat : Set :=
+    | O : nat
+    | S (n : nat) : nat.
+}
+We can define functions using \lstinline{Definition}. For example:
+\lstlisting{
+	    Definition pred (n : nat) : nat :=
+        match n with
+        | O => O
+        | S n' => n'
+        end.
+}
+We can define recursive functions using \lstinline{Fixpoint}. For example:
+\lstlisting{
+	    Fixpoint plus (n1 n2 : nat) : nat :=
+        match n1 with
+        | O => n2
+        | S n1' => S (plus n1' n2)
+        end.
+}
+
+We can perform normal-form reductions using the keyword \lstinline{Compute}: \lstinline{Compute (S (S O) + S O). (* 2 + 1 = 3 *)}.
+
+As usual, we define the \lstinline{List} datatype, which itself is dependent on a type (a type constructor):
+\lstlisting{
+	Inductive list (A : Type) : Type :=
+    | nil : list A
+    | cons : A -> list A -> list A.
+}
+
+In this case, it is possible to make the type parameter implicit using \lstinline{Arguments}: \lstinline{Arguments nil {A}}.
+
+We also define \lstinline{app} and \lstinline{length}:
+\lstlisting{
+	    Fixpoint app {X : Type} (l1 l2 : list X) : list X :=
+      match l1 with
+      | nil      => l2
+      | cons h t => cons h (app t l2)
+      end.
+
+    Fixpoint length {X : Type} (l : list X) : nat :=
+      match l with
+      | nil => 0
+      | cons _ l' => S (length l')
+      end.
+}
+
+Of course, like any self-respective functional language, higher-order functions like \lstinline{map} are suppported and 
+encouraged:
+\lstlisting{
+	    Fixpoint map {A B : Type} (f : A -> B) (l : list A) : list B :=
+        match l with
+        | [] => []
+        | a :: l' => f a :: map f l'
+        end.
+}
+
+It is also possible to introduce anonymous functions using \lstinline{fun x => ...}.
+
+\subsection{Dependent Types}
+Coq's type system is founded on dependent types: types that depend on a value. For example:
+\lstlisting{
+	Inductive Vec (A : Type) : nat -> Type :=
+    | vnil : Vec A 0
+    | vcons {n : nat} (a : A) (v : Vec A n) : Vec A (S n).
+    Check vnil. (* forall A, Vec A 0 *)
+    Check vcons. (* forall A n, A -> Vec A n -> Vec A (S n) *)
+}
+
+Here too we can make the arguments explicit: \lstinline{Arguments vcons {A n}}.
+
+We can write functions accepting these types:
+\lstlisting{
+	    Fixpoint vappend {A : Type} {n1 n2 : nat}
+                     (ls1 : Vec A n1) (ls2 : Vec A n2) : Vec A (n1 + n2) :=
+        match ls1 with
+        | vnil => (* n1=0, n1 + n2 = n2 *)
+          ls2
+        | vcons a ls1' => (* n1 = S n1', n1 + n2 = S (n1' + n2) *)
+          vcons a (vappend ls1' ls2)
+        end.
+
+        Fixpoint to_list {A : Type} {n : nat}
+                     (ls : Vec A n)
+                     : list A :=
+        match ls with
+        | vnil => nil
+        | vcons a ls' => cons a (to_list ls')
+        end.
+
+}
+
+\subsection{Programs as Proofs}
+Consider the following dependent type:
+\lstlisting{
+	Inductive foo {A : Type} : A -> A -> Type :=
+    | foo_same (a : A) : foo a a.
+}
+
+Since the only term of type \lstinline{foo a b} is a constructor \lstinline{foo_same a}, the existence
+of such a term is a \emph{proof} that \lstinline{a = b}. This type exists in the standard library
+and is called \lstinline{eq} with its constructor \lstinline{eq_refl}.
+We can write hypotheses, which may or may not be inhabited:
+\lstlisting{
+	Hypothesis some_hyp : foo 5 6.
+}
+
+We can do pattern matching on the proof and use it to create new proofs:
+\lstlisting{
+	    Definition foo_commutativity {A : Set} (a b : A) (pf : foo a b) : foo b a :=
+      match pf with
+      | foo_same a => foo_same a
+      end.
+}
+
+We can use this to prove facts on our programs:
+\lstlisting{
+	    Fixpoint to_list_length {A : Type} {n : nat} (ls : Vec A n)
+             : length (to_list ls) = n :=
+    match ls with
+    | vnil => (* n = 0, to_list ls = nil *) eq_refl
+    | vcons a ls' =>
+      (* n = S n' *)
+      (* to_list ls = a :: to_list ls' *)
+      (* to_list_length ls' : eq (length (to_list ls')) n' *)
+      (* WTS: eq (length (to_list (vcons a ls'))) (S n')
+                (length (cons a ls'))            (S n')
+                (S (length ls'))                 (S n')
+      *)
+      match to_list_length ls' with
+      | eq_refl _ => eq_refl _
+      end
+    end.
+}
+This is somewhat of a hassle. This is why we have \emph{tactics} and proof mode.

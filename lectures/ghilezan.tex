@@ -1,5 +1,329 @@
 \section{Introduction to Barendregt's Lambda Cube}
 \subauthor{Silvia Ghilezan}{University of Novi Sad}
+\plquote{\todo{find quote}}
 \begin{abstract}
 	The Lambda Cube is a framework introduced by Henk Barendregt to systematically investigate eight different systems of lambda calculi with types. The basic system is the lambda calculus with simple types and all other systems are obtained as its three-dimensional extensions with: polymorphic types, type operators and dependent types.
 \end{abstract}
+
+\subsection{Overview}
+The ``lambda cube'' consists of 3 possible additions to the basic lambda type system $\lambda\to$:
+\begin{itemize}
+	\item $\lambda2$ - Polymorphic types
+	\item $\lambda$\underbar{$\omega$} (read: ``weak $\lambda\omega$'') - Type constructors
+	\item $\lambda P$ - Dependent types
+\end{itemize}
+
+\subsection{Background}
+Leibiniz tought of the ``Characteristica universalis'' - a universal language for describing all mathematical knowledge.
+In 1928, Hilbert and Ackerman published their paper on the Entscheidungsproblem or ``decision problem'': Given all axioms
+of math, is there an algorithm that can tell if a proposition is deducable from the axioms?
+
+In the 1930s, negative answers were given to the Entscheidungsproblem. G\"odel gave the first negative result in 1931
+with his ``incompleteness theorems''. Later, Church gave another negative answer: it is undecidable to check if
+two \lc terms are indecidable. Around that time, Turing proved that the halting problem for Turing
+machines is also undecidable.
+
+Multiple authors worked on the problem at roughly the same times and came up with similiar solutions.
+
+Church was motivated by the formalization of mathematics. He came up with a successful model for computable
+functions: the \lc. Later, types were added to create the simply typed \lc: $\lambda\to$.
+
+Curry was motivated by the elimination of variables in logic. He came up with a successful model for computable
+functions: combinatory logic. Later, types were added to create combinatory logic with types.
+
+Turing was motivated by formalization of algorithms and reasoning about them. He came up with a successful model for computable
+functions: the Turing machine.
+
+In the mid 1930s, the equivalence of these models (as well as the model of recursive functions) was proven by Curry, Kleene and
+Turing.
+
+\subsection{Lambda Calculus Review}
+Syntax:
+\[
+M ::= x \mid c \mid (M M) \mid (\lambda x. M)
+\]
+Where $x\in V$, a countable set of variables, and $c\in C$, a countable set of constants. The \lc is ``pure'' if $C = \emptyset$.
+
+\paragraph{Conventions for associativity}
+\begin{itemize}
+	\item $M_1 M_2 M_3$ stands for $((M_1 M_2) M-3)$ - application is left-associative.
+	\item $\lambda xy. M$ is shorthand for $(\lambda x. (\lambda y. (M)))$ - abstraction is right-associative.
+	\item $\lambda x. M N$ is shorthand for $(\lambda x. (M N))$ - application takes priority over absraction.
+\end{itemize}
+
+\paragraph{Combinators}
+\begin{itemize}
+	\item \textbf{I} $\equiv \lambda x. x$ - combinator \textbf{I}
+	\item \textbf{K} $\equiv \lambda xy. x$ - combinator \textbf{K}
+	\item \textbf{S} $\equiv \lambda xyz. xz (yz)$ - combinator \textbf{S}
+	\item \textbf{$\Delta$} $\equiv \lambda x. xx$ - self application
+	\item \textbf{Y} $\equiv \lambda f. (\lambda x. f (x x)) (\lambda x. f (x x))$ - fixed point combinator 
+	\footnote{In \lc, every function has exactly one fixed point.}
+	\item \textbf{$\Omega$} $\equiv \Delta \Delta \equiv (\lambda x. x x)(\lambda x. x x)$ - higher-order function
+\end{itemize}
+
+\paragraph{Free and bound variables}
+
+The set of free variables of the \lc term $M$ is defined inductively.
+\begin{itemize}
+	\item $FV(x) = {x}$
+	\item $FV(MN) = FV(M)\cup FV(N)$
+	\item $FV(\lambda x. M) = FV(M) \setminus {x}$
+\end{itemize}
+A variable in $M$ is bound if it now free. $M$ is a closed \lc term (or ``combinator'') if $FV(M) = \emptyset$. $\Lambda^\circ$ denotes 
+the set of closed \lc terms.
+
+\paragraph{Reduction rules - operational semantics}
+\begin{itemize}
+	\item $\alpha$-reduction: $\lambda x. M \reduces{\alpha} \lambda y. M[x := y]$ for all $y\notin FV)M)$. $\alpha$-reduction expresses
+	the principle that the name of the bound variable is irrelevant. 
+	$\xreduces{\alpha}$ is an equivalence relation and is denoted $\equiv_\alpha$.
+	In this context is is also called ``$\alpha$-conversion''.
+	\item $\beta$-reduction: $(\lambda x. M) N \reduces{\beta} M[x := N]$. $\beta$-reduction is a formalization of function evaluation.
+	$\beta$-conversion which is the symmetric closure of $\xreduces{\beta}$ with $\alpha$-reduction is an equivalence relation  and
+	is denoted $\equiv_\beta$.
+	\emph{Barendregt's variable convention}: If a term contains a free variable which would become bound after $\beta$-reduction,
+	that variable should be renamed. Renaming could be done also by using \emph{De Bruijn name-free notation}.
+	For example, $(\lambda xy. xy)(yz)$ should have the bound $y$ variable renamed using $\alpha$-reduction.
+	\item $\eta$-reduction: $\lambda x. (M x) \reduces{\eta} M$ for all $x\notin FV(M)$. $\eta$-reduction
+	expresses \emph{extensionality}: two functions are equal if and only if the results of their application on any parameter are equal.
+\end{itemize} 
+
+\paragraph{Properties}
+Confluence - the order of reductions does not matter.
+
+\textbf{Theorem (Church-Rosser)}: For $\tau\in{\alpha, \beta, \eta}$ we have that if $M \xreduces{\tau} N$ and $M \xreduces{P}$ then
+there exists $S$ such that $N \xreduces{\tau} S$ and $P \xreduces{\tau} S$.
+
+The proof is deep and involved.
+
+Corollaries:
+\begin{itemize}
+\item If $M \xreduces{\tau} N$ and $M \xreduces{P}$ then $N \equiv_\tau P$.
+\item The order of reductions does not matter and always leads to the same result.
+\item Reductions can be executed in parallel.
+\end{itemize}
+
+Normal forms: \lc terms that cannot be reduced any further. $P\in\Lambda$ is \textbf{normalizing} if it has a normal form. 
+It is \textbf{strongly-normalizing} if all reductions of $P$ are finite. 
+We define $\xreduces \equiv \xreduces{\alpha} \cup \xreduces{\beta}$.
+
+% \textbf{Theorem (normalization)}: Each \lc term has a single normal form, up to $\alpha$-conversion.
+\todo{normalization}
+
+\paragraph{Logic, conditionals and pairs}
+
+Propositional logic in \lc:
+\[
+\top := \lambda xy. x,~~~~\bottom := \lambda xy.y,~~~~\neg := \lambda x. x \top \bottom
+\wedge := \lambda xy. xy\bottom,~~~~\vee := \lambda xy. x\top y
+\]
+
+Pairs:
+\[
+pair x y := \lambda p. p x y,~~~~fst p := p \top,~~~~snd p := p \bottom
+\]
+
+Arithmetic - Church numerals:
+\[
+0 := \lambda fx. x
+1 := \lambda fx. fx
+n := \lambda fx. f^n x
+add := \lambda xyz. xp (ypq)
+mult := \lambda xyz. x (yz)
+succ := \lambda xyz. xy(yz)
+exp := \lambda xy. yz
+iszero := \lambda n. n (\top \bottom) \top
+\]
+\textbf{Exercise}: $add n m \equiv_\beta n + m$, $mult n m \equiv_\beta n + m$
+
+\subsection{Simple Functional Types}
+The untyped \lc has its disadvantages: there exist terms without normal forms, and it is possible
+to apply functions in a meaningless way, such as $+ +$. 
+
+\emph{Types} are syntactical objects that can be assigned to $\lambda$ terms. There are two main
+paradigms for simply-typed \lc:
+\begin{itemize}
+	\item \'a la Church - explicit type assignment (aka: typed \lc)
+	\item \'a la Curry - implicit type assignment (aka: \lc with types)
+\end{itemize}
+
+\paragraph{Types}
+\[
+\sigma ::= \alpha | (\sigma \to \sigma)
+\]
+
+Where $\alpha \in \mathrm{TVar}$ is a countable set of type variable. In addition, we agree
+that $\sigma_1 \to \sigma_2 \to \sigma_3$ means $(\sigma_1 \to (\sigma_2 \to \sigma_3))$
+
+We have \emph{type assignments}: $M : \sigma$, where $M$ is a \lc term and $\sigma$ is a type. If $M$ is a variable,
+we also call this a declaration. We have a type environment: $\Gamma$ which is a set of type assignments.
+
+Axiom:
+\[
+\frac{}{\Gamma, x : \sigma \vdash x : \sigma}
+\]
+
+Rules:
+\[
+\frac{\Gamma \vdash M : \sigma \to \tau~~~~\Gamma \vdash N : \sigma}{\Gamma \vdash M N : \tau}
+\]
+For \'a la Church:
+\[
+\frac{\Gamma, x: \sigma \vdash M : \tau}{\Gamma : \lambda x: \sigma. M : \sigma \to \tau}
+\]
+For \'a la Curry:
+\[
+\frac{\Gamma, x: \sigma \vdash M : \tau}{\Gamma : \lambda x. M : \sigma \to \tau}
+\]
+
+Note: simply typed \lc is not Turing complete - it does not admit programs that do not terminate.
+
+Uniqueness of types: If $\Gamma \vdash M : \sigma$ and $\Gamma \vdash M : \tau$ then $\sigma = \tau$.
+
+The Church-Rosser property holds in the simply typed \lc as well.
+
+Subject reduction - type preservation under reduction: If $M \reduces{} P$ and $M : \sigma$, then $P : \sigma$. 
+This means that evaluation of terms does not cause types to change. In other words, types are \emph{sound}
+under reduction.
+
+\textbf{Theorem (Strong Normalization, Tait 1967):} If $M : \sigma$, then $M$ is strongly normalizing.
+
+This theorem was proved using the \emph{reducibility method} which later became \emph{reducability candidates}
+and \emph{logical relations} \Cref{sec:logicalrels}.
+
+\subsection{Expressiveness of Simply-Typed Lambda Calculus}
+Self application is not typable. Numerals are typable.
+
+\textbf{Definition (Extended Polynomials)}: The smallest class of functions including $0, 1$, projections,
+addition, multiplication and $\mathrm{ifzero}(n, m, p) := \mathrm{if} n = 0 \mathrm{then} m \mathrm{else} p$.
+
+\textbf{Theorem}: $M$ is typable in $\lambda \to$ iff $M$ is an extended polynomial.
+
+\paragraph{$\lambda\to$ and logic}
+Logic can come in three forms:
+\begin{itemize}
+\item Axiomatic (Hilbert-style) which relies on axioms.
+\item Natural deduction which has one axiom and rules of elimination and introduction.
+\item Sequent calculus which relies on rules of elimination and introduction.
+\end{itemize}
+
+For \lc, the most natural way to give logic is the natural deduction style. 
+
+These are intuitionistic logic rules (minimal):
+
+Axiom:
+\[
+\frac{}{\Gamma, \sigma \vdash \sigma}
+\]
+
+Rules:
+\[
+\begin{array}[cc]
+(\to_\mathrm{elim})&\frac{\Gamma \vdash \sigma \to \tau~~~~\Gamma \vdash \sigma}{\Gamma \vdash \tau} \\
+(\to_\mathrm{intr})&\frac{\Gamma, \sigma \vdash \tau}{\Gamma \vdash \sigma \to \tau}
+\end{array}
+\]
+
+The elimination rule is also called \emph{Modus Ponens} in Aristotelian terms. For example, let's prove $\vdash \alpha \to \alpha$.
+
+We can use the axiom with an empty $\Gamma$, and deduce $\alpha \vdash \alpha$. Next, we apply the introduction
+rule: $\alpha \vdash \alpha$ and so $\vdash \alpha \to \alpha$.
+
+These rules correspond to rules phrased in the language of \lc and types:
+
+Axiom:
+\[
+\frac{}{\Gamma, x: \sigma \vdash x: \sigma}
+\]
+
+Rules:
+\[
+\begin{array}[cc]
+(\to_\mathrm{elim})&\frac{\Gamma \vdash x: \sigma \to \tau~~~~\Gamma \vdash y: \sigma}{\Gamma \vdash (x y): \tau} \\
+(\to_\mathrm{intr})&\frac{\Gamma, x: \sigma \vdash y: \tau}{\Gamma \vdash (\lambda x. y): \sigma \to \tau}
+\end{array}
+\]
+
+\paragraph{Curry-Howard Correspondence}
+The Curry-Howard Correspondence is the claim that $\vdash \sigma \leftrightarrow \vdash M : \sigma$. In
+words, a formula is provable in minimal intuitionistic logic if and only if it is inhabited in $\lambda\to$.
+
+In the CHC, formulae correspond to types. Proofs are terms or programs. Proof normalization is term reduction.
+
+We have three fundemental problems:
+\begin{itemize}
+\item Type checking: Given $M$ and $\sigma$, is $M : \sigma$?
+\item Type inference: Given $M$, find $\sigma$ such that $M : \sigma$, or declare that one does not exist.
+\item Type inhabition: Given $\sigma$, find $M$ such that $M : \sigma$, or declare that one does not exist.
+\end{itemize}
+
+In simply-typed \lc, all three problems are decidable.
+
+ST \lc has some shortcomings: it has no self-application or recursion. As a result, it is not Turing complete.
+
+\subsection{$\lambda2$ polymorphic types}
+As we saw, the expressiveness of $\lambda\to$ is quite limited. One problem is that each function has exactly
+one type and functions cannot be reused across types. The solution is to define functions that treat types
+polymorphically and add $\forall \alpha. \sigma$ terms that quantify over types. For example, the type
+$\forall \alpha. (\alpha \to \alpha$ is the type of all functions accepting a parameter of some type
+and returning a value of the same type.
+
+In the 1970s, Girard called this System $\script{F}$ and Reynolds called it \textsc{Forsythe}.
+These systems add $\lambda \alpha. \mathrm{Expression}$ and $(\mathrm{Expression} \mathrm{Type})$ to the set
+of terms, and $\forall \alpha. \mathrm{Type}$ to the set of types.
+
+There are now two types of application: it is possible to apply two terms (regular application)
+or a type to a term (instantiation). There are also two kinds of $\beta$-reductions.
+
+We also extend our typing rules:
+\[
+\frac{\Gamma \vdash M : \sigma}{\Gamma \vdash \lambda \alpha. M : \forall \alpha. \sigma}
+
+\frac{\Gamma \vdash M : \forall \alpha. \sigma}{\Gamma \vdash M \tau : \sigma[\tau/\alpha]}
+\]
+
+Now we can type $\lambda x. x x$: it has type $(\forall \alpha. \alpha) \to \tau$.
+
+$\lambda2$ has type uniqueness, Church-Rosser, subject reduction and strong normalization as well.
+
+G\"odel's first incompleteness theorem from 1931 states that there exist true statements that cannot be proven.
+In 1970, it was proven that strong normalization is expressible in $\lambda2$, but not provable in $\lambda2$.
+It is provable in slightly stronger systems, making it a natural example of a true statement that cannot be proven.
+
+\paragraph{Expressiveness of $\lambda2$}
+We define the type of natural numbers: $\forall \alpha. \alpha \to (\alpha \to \alpha) \to \alpha$.
+
+% We can also define iteration: If $c : \sigma$ and $g: \sigma \to \sigma$, we can define $\mathrm{It} c g : \mathrm{Nat} \to \sigma$
+% as $\lambda n. $ TODO
+
+\textbf{Theorem}: $\lambda2$ types exactly all primitive recursive functions. For example, Ackerman's function is
+recursive but not PR and therefore not typable in $\lambda2$.
+
+\textbf{Theorem (Girard, Reynolds, Curry-Howard)}: A second-order logic formula holds if it is inhabited in $\lambda 2$.
+
+It is possible to define the order connectives:
+\[
+\bottom := \forall \alpha. \alpha
+\sigma \wedge \tau := \forall \alpha. (\sigma \to \tau \to \alpha) \to \alpha
+\todo{the rest...}
+\]
+
+Constructive second order propositional logic - Peirce's law: 
+$\not\vdash M : \forall \alpha. \forall \beta. ((\alpha \to \beta) \to \alpha) \to \alpha$
+
+Peirce's law is uninhabited. It is valid in classical logic but not in intuitionistic logic.
+
+Unfortunately, none of the three problems presented earlier is decidable for $\lambda 2$. A restriction of $\lambda 2$ has
+an easy type inference algorithm: Hindley-Milner type inference.
+
+Terms and types are mutually dependent.
+\begin{itemize}
+\item Terms depending on terms: $\lambda \to$
+\item Terms depending on types: $\lambda 2$
+\item Types depending on types: $\lambda$ \underbar{$\omega$}
+\item Types depending on types: $\lambda P$
+\end{itemize}
+
+
+
