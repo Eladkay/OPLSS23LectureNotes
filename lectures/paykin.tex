@@ -139,29 +139,126 @@ We can write hypotheses, which may or may not be inhabited:
 
 We can do pattern matching on the proof and use it to create new proofs:
 \lstlisting{
-	    Definition foo_commutativity {A : Set} (a b : A) (pf : foo a b) : foo b a :=
-      match pf with
-      | foo_same a => foo_same a
-      end.
+Definition foo_commutativity {A : Set} (a b : A) (pf : foo a b) : foo b a :=
+	match pf with
+	| foo_same a => foo_same a
+	end.
 }
 
 We can use this to prove facts on our programs:
 \lstlisting{
-	    Fixpoint to_list_length {A : Type} {n : nat} (ls : Vec A n)
+Fixpoint to_list_length {A : Type} {n : nat} (ls : Vec A n)
              : length (to_list ls) = n :=
-    match ls with
-    | vnil => (* n = 0, to_list ls = nil *) eq_refl
+	match ls with
+	| vnil => (* n = 0, to_list ls = nil *) eq_refl
     | vcons a ls' =>
-      (* n = S n' *)
-      (* to_list ls = a :: to_list ls' *)
-      (* to_list_length ls' : eq (length (to_list ls')) n' *)
-      (* WTS: eq (length (to_list (vcons a ls'))) (S n')
-                (length (cons a ls'))            (S n')
-                (S (length ls'))                 (S n')
-      *)
-      match to_list_length ls' with
-      | eq_refl _ => eq_refl _
-      end
+    	match to_list_length ls' with
+      	| eq_refl _ => eq_refl _
+      	end
     end.
 }
-This is somewhat of a hassle. This is why we have \emph{tactics} and proof mode.
+This is somewhat of a hassle. This is why we have \emph{tactics} and proof mode. 
+
+\subsection{Solutions to Lab 1}
+Solution for \lstinline{factorial}:
+\lstlisting{
+Fixpoint factorial (n:nat) : nat := 
+	match n with
+	| 0 => 1
+	| S n => (n + 1) * (factorial n)
+	end.	
+}
+
+Solution for \lstinline{eqb}:
+\lstlisting{
+Fixpoint eqb (n m : nat) : bool := 
+	match n, m with
+	| 0, 0 => true
+	| 0, _ => false
+	| _, 0 => false
+	| (S n), (S m) => eqb n m
+	end.
+}
+
+Solution for binary number exercises:
+\lstlisting{
+Fixpoint incr (m:bin) : bin := 
+	match m with
+	| Z => B1 Z
+	| B0 n => B1 n
+	| B1 n => B0 (incr n) 
+	end.
+
+Fixpoint bin_to_nat (m:bin) : nat := 
+	match m with
+      | Z => 0
+      | B0 n => 2 * (bin_to_nat n)
+      | B1 n => 2 * (bin_to_nat n) + 1
+      end.
+}
+
+Solution for \lstinline{nonzeros}:
+\lstlisting{
+Fixpoint nonzeros (l:list nat) : list nat :=
+	match l with
+	| nil => nil
+	| n::l => match n with
+			  | 0 => nonzeros l
+			  | S n => (S n)::(nonzeros l)
+              end
+      end.
+}
+
+Solution for \lstinline{from_list}:
+\lstlisting{
+Fixpoint from_list {A : Type} (l:list A) : Vec A (length l) := 
+	match l with
+	| nil => vnil
+	| (a::ll) => vcons a (from_list ll)
+	end.
+}
+
+Solution for \lstinline{add_shuffle}:
+\lstlisting{
+Theorem add_shuffle3 : forall n m p : nat, n + (m + p) = m + (n + p). Proof. 
+	intros. rewrite !add_assoc. apply PeanoNat.Nat.add_cancel_r. apply add_comm. 
+Qed.
+}
+
+Solution for \lstinline{double_plus}:
+\lstlisting{
+Lemma double_plus : forall n, double n = n + n. Proof.
+	induction n. auto.  simpl. rewrite IHn. auto.
+Qed.
+}
+
+Solution for \lstinline{binary_commute}:
+\lstlisting{
+Theorem binary_commute orig : bin_to_nat (incr orig) = S (bin_to_nat orig). Proof.
+	induction orig. simpl. reflexivity. simpl.
+	rewrite PeanoNat.Nat.add_1_r. reflexivity.
+	simpl. rewrite PeanoNat.Nat.add_0_r.
+	rewrite IHorig.
+	rewrite PeanoNat.Nat.add_0_r.
+	rewrite plus_Sn_m.
+	apply f_equal.
+	rewrite <- add_assoc.
+	rewrite PeanoNat.Nat.add_cancel_l.
+	rewrite PeanoNat.Nat.add_1_r. reflexivity.
+Qed.
+
+}
+
+Solution for \lstinline{nat_bin_nat}:
+\lstlisting{
+Fixpoint nat_to_bin (n:nat) : bin := match n with
+	| 0 => Z
+	| S n' => incr (nat_to_bin n')
+end.
+
+Theorem nat_bin_nat : forall n, bin_to_nat (nat_to_bin n) = n. Proof. 
+	intros. induction n. simpl. reflexivity.
+	simpl. rewrite  binary_commute. rewrite IHn.
+	reflexivity. 
+Qed.
+}
