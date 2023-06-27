@@ -16,7 +16,7 @@ proof assistants that rely on logics like first-order logic (ACL2), higher order
 We are interested in two questions: 
 \begin{enumerate}
 \item Do programs match their specifications?
-\item Are proofs about those specifications correct/
+\item Are proofs about those specifications correct?
 \end{enumerate}
 
 Coq was developed by Thiery Coquand based on his Calculus of (Inductive) Constructions. It is mainly maintained by researchers at Inria in
@@ -29,124 +29,120 @@ and other properties (like in-bounds array access). The third part ties the two 
 \subsection{Coq Basics}
 We can define an inductive datatype, as is typical in function languages, with the keyword \lstinline{Inductive}.
 For example, the natural numbers can be defined as:
-\lstlisting{
-	Inductive nat : Set :=
-    | O : nat
-    | S (n : nat) : nat.
-}
+\begin{lstlisting}
+Inductive nat : Set :=
+	| O : nat
+	| S (n : nat) : nat.
+\end{lstlisting}
 We can define functions using \lstinline{Definition}. For example:
-\lstlisting{
-	    Definition pred (n : nat) : nat :=
-        match n with
-        | O => O
-        | S n' => n'
-        end.
-}
+\begin{lstlisting}
+Definition pred (n : nat) : nat :=
+	match n with
+	| O => O
+	| S n' => n'
+	end.
+\end{lstlisting}
 We can define recursive functions using \lstinline{Fixpoint}. For example:
-\lstlisting{
-	    Fixpoint plus (n1 n2 : nat) : nat :=
-        match n1 with
-        | O => n2
-        | S n1' => S (plus n1' n2)
-        end.
-}
+\begin{lstlisting}
+Fixpoint plus (n1 n2 : nat) : nat :=
+	match n1 with
+	| O => n2
+	| S n1' => S (plus n1' n2)
+	end.
+\end{lstlisting}
 
-We can perform normal-form reductions using the keyword \lstinline{Compute}: \lstinline{Compute (S (S O) + S O). (* 2 + 1 = 3 *)}.
+We can perform normal-form reductions using the keyword \lstinline{Compute}: 
+
+\lstinline{Compute (S (S O) + S O). (* 2 + 1 = 3 *)}.
 
 As usual, we define the \lstinline{List} datatype, which itself is dependent on a type (a type constructor):
-\lstlisting{
-	Inductive list (A : Type) : Type :=
+\begin{lstlisting}
+Inductive list (A : Type) : Type :=
     | nil : list A
     | cons : A -> list A -> list A.
-}
+\end{lstlisting}
 
-In this case, it is possible to make the type parameter implicit using \lstinline{Arguments}: \lstinline{Arguments nil {A}}.
+In this case, it is possible to make the type parameter implicit using \lstinline{Arguments}: \lstinline|Arguments nil {A}|.
 
 We also define \lstinline{app} and \lstinline{length}:
-\lstlisting{
-	    Fixpoint app {X : Type} (l1 l2 : list X) : list X :=
-      match l1 with
-      | nil      => l2
-      | cons h t => cons h (app t l2)
-      end.
+\begin{lstlisting}
+Fixpoint app {X : Type} (l1 l2 : list X) : list X :=
+	match l1 with
+	| nil => l2
+	| cons h t => cons h (app t l2)
+	end.
 
-    Fixpoint length {X : Type} (l : list X) : nat :=
-      match l with
-      | nil => 0
-      | cons _ l' => S (length l')
-      end.
-}
+Fixpoint length {X : Type} (l : list X) : nat :=
+	match l with
+	| nil => 0
+	| cons _ l' => S (length l')
+	end.
+\end{lstlisting}
 
-Of course, like any self-respective functional language, higher-order functions like \lstinline{map} are suppported and 
+Of course, like any self-respecting functional language, higher-order functions like \lstinline{map} are suppported and 
 encouraged:
-\lstlisting{
-	    Fixpoint map {A B : Type} (f : A -> B) (l : list A) : list B :=
-        match l with
-        | [] => []
-        | a :: l' => f a :: map f l'
-        end.
-}
+\begin{lstlisting}
+Fixpoint map {A B : Type} (f : A -> B) (l : list A) : list B :=
+	match l with
+	| [] => []
+	| a :: l' => f a :: map f l'
+	end.
+\end{lstlisting}
 
 It is also possible to introduce anonymous functions using \lstinline{fun x => ...}.
 
 \subsection{Dependent Types}
 Coq's type system is founded on dependent types: types that depend on a value. For example:
-\lstlisting{
-	Inductive Vec (A : Type) : nat -> Type :=
+\begin{lstlisting}
+Inductive Vec (A : Type) : nat -> Type := 
     | vnil : Vec A 0
     | vcons {n : nat} (a : A) (v : Vec A n) : Vec A (S n).
-    Check vnil. (* forall A, Vec A 0 *)
-    Check vcons. (* forall A n, A -> Vec A n -> Vec A (S n) *)
-}
+Check vnil. (* forall A, Vec A 0 *)
+Check vcons. (* forall A n, A -> Vec A n -> Vec A (S n) *)
+\end{lstlisting}
 
-Here too we can make the arguments explicit: \lstinline{Arguments vcons {A n}}.
+Here too we can make the arguments explicit: \lstinline|Arguments vcons {A n}|.
 
 We can write functions accepting these types:
-\lstlisting{
-	    Fixpoint vappend {A : Type} {n1 n2 : nat}
-                     (ls1 : Vec A n1) (ls2 : Vec A n2) : Vec A (n1 + n2) :=
-        match ls1 with
-        | vnil => (* n1=0, n1 + n2 = n2 *)
-          ls2
-        | vcons a ls1' => (* n1 = S n1', n1 + n2 = S (n1' + n2) *)
-          vcons a (vappend ls1' ls2)
-        end.
+\begin{lstlisting}
+Fixpoint vappend {A : Type} {n1 n2 : nat} (ls1 : Vec A n1) (ls2 : Vec A n2) : Vec A (n1 + n2) :=
+	match ls1 with
+	| vnil => (* n1=0, n1 + n2 = n2 *) ls2
+	| vcons a ls1' => (* n1 = S n1', n1 + n2 = S (n1' + n2) *) vcons a (vappend ls1' ls2)
+	end.
 
-        Fixpoint to_list {A : Type} {n : nat}
-                     (ls : Vec A n)
-                     : list A :=
-        match ls with
-        | vnil => nil
-        | vcons a ls' => cons a (to_list ls')
-        end.
-
-}
+Fixpoint to_list {A : Type} {n : nat} (ls : Vec A n) : list A :=
+	match ls with
+	| vnil => nil
+	| vcons a ls' => cons a (to_list ls')
+	end.
+\end{lstlisting}
 
 \subsection{Programs as Proofs}
 Consider the following dependent type:
-\lstlisting{
-	Inductive foo {A : Type} : A -> A -> Type :=
+\begin{lstlisting}
+Inductive foo {A : Type} : A -> A -> Type :=
     | foo_same (a : A) : foo a a.
-}
+\end{lstlisting}
 
 Since the only term of type \lstinline{foo a b} is a constructor \lstinline{foo_same a}, the existence
 of such a term is a \emph{proof} that \lstinline{a = b}. This type exists in the standard library
 and is called \lstinline{eq} with its constructor \lstinline{eq_refl}.
 We can write hypotheses, which may or may not be inhabited:
-\lstlisting{
+\begin{lstlisting}
 	Hypothesis some_hyp : foo 5 6.
-}
+\end{lstlisting}
 
 We can do pattern matching on the proof and use it to create new proofs:
-\lstlisting{
+\begin{lstlisting}
 Definition foo_commutativity {A : Set} (a b : A) (pf : foo a b) : foo b a :=
 	match pf with
 	| foo_same a => foo_same a
 	end.
-}
+\end{lstlisting}
 
 We can use this to prove facts on our programs:
-\lstlisting{
+\begin{lstlisting}
 Fixpoint to_list_length {A : Type} {n : nat} (ls : Vec A n)
              : length (to_list ls) = n :=
 	match ls with
@@ -156,21 +152,21 @@ Fixpoint to_list_length {A : Type} {n : nat} (ls : Vec A n)
       	| eq_refl _ => eq_refl _
       	end
     end.
-}
+\end{lstlisting}
 This is somewhat of a hassle. This is why we have \emph{tactics} and proof mode. 
 
 \subsection{Solutions to Lab 1}
 Solution for \lstinline{factorial}:
-\lstlisting{
+\begin{lstlisting}
 Fixpoint factorial (n:nat) : nat := 
 	match n with
 	| 0 => 1
 	| S n => (n + 1) * (factorial n)
 	end.	
-}
+\end{lstlisting}
 
 Solution for \lstinline{eqb}:
-\lstlisting{
+\begin{lstlisting}
 Fixpoint eqb (n m : nat) : bool := 
 	match n, m with
 	| 0, 0 => true
@@ -178,10 +174,10 @@ Fixpoint eqb (n m : nat) : bool :=
 	| _, 0 => false
 	| (S n), (S m) => eqb n m
 	end.
-}
+\end{lstlisting}
 
 Solution for binary number exercises:
-\lstlisting{
+\begin{lstlisting}
 Fixpoint incr (m:bin) : bin := 
 	match m with
 	| Z => B1 Z
@@ -195,10 +191,10 @@ Fixpoint bin_to_nat (m:bin) : nat :=
       | B0 n => 2 * (bin_to_nat n)
       | B1 n => 2 * (bin_to_nat n) + 1
       end.
-}
+\end{lstlisting}
 
 Solution for \lstinline{nonzeros}:
-\lstlisting{
+\begin{lstlisting}
 Fixpoint nonzeros (l:list nat) : list nat :=
 	match l with
 	| nil => nil
@@ -207,33 +203,33 @@ Fixpoint nonzeros (l:list nat) : list nat :=
 			  | S n => (S n)::(nonzeros l)
               end
       end.
-}
+\end{lstlisting}
 
 Solution for \lstinline{from_list}:
-\lstlisting{
+\begin{lstlisting}
 Fixpoint from_list {A : Type} (l:list A) : Vec A (length l) := 
 	match l with
 	| nil => vnil
 	| (a::ll) => vcons a (from_list ll)
 	end.
-}
+\end{lstlisting}
 
 Solution for \lstinline{add_shuffle}:
-\lstlisting{
+\begin{lstlisting}
 Theorem add_shuffle3 : forall n m p : nat, n + (m + p) = m + (n + p). Proof. 
 	intros. rewrite !add_assoc. apply PeanoNat.Nat.add_cancel_r. apply add_comm. 
 Qed.
-}
+\end{lstlisting}
 
 Solution for \lstinline{double_plus}:
-\lstlisting{
+\begin{lstlisting}
 Lemma double_plus : forall n, double n = n + n. Proof.
 	induction n. auto.  simpl. rewrite IHn. auto.
 Qed.
-}
+\end{lstlisting}
 
 Solution for \lstinline{binary_commute}:
-\lstlisting{
+\begin{lstlisting}
 Theorem binary_commute orig : bin_to_nat (incr orig) = S (bin_to_nat orig). Proof.
 	induction orig. simpl. reflexivity. simpl.
 	rewrite PeanoNat.Nat.add_1_r. reflexivity.
@@ -246,11 +242,10 @@ Theorem binary_commute orig : bin_to_nat (incr orig) = S (bin_to_nat orig). Proo
 	rewrite PeanoNat.Nat.add_cancel_l.
 	rewrite PeanoNat.Nat.add_1_r. reflexivity.
 Qed.
-
-}
+\end{lstlisting}
 
 Solution for \lstinline{nat_bin_nat}:
-\lstlisting{
+\begin{lstlisting}
 Fixpoint nat_to_bin (n:nat) : bin := match n with
 	| 0 => Z
 	| S n' => incr (nat_to_bin n')
@@ -261,4 +256,4 @@ Theorem nat_bin_nat : forall n, bin_to_nat (nat_to_bin n) = n. Proof.
 	simpl. rewrite  binary_commute. rewrite IHn.
 	reflexivity. 
 Qed.
-}
+\end{lstlisting}

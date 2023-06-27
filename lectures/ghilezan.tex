@@ -1,6 +1,6 @@
 \section{Introduction to Barendregt's Lambda Cube}
 \subauthor{Silvia Ghilezan}{University of Novi Sad}
-\plquote{\todo{find quote}}
+\plquote{``That rock sure is a big flat rock.''}
 \begin{abstract}
 	The Lambda Cube is a framework introduced by Henk Barendregt to systematically investigate eight different systems of lambda calculi with types. The basic system is the lambda calculus with simple types and all other systems are obtained as its three-dimensional extensions with: polymorphic types, type operators and dependent types.
 \end{abstract}
@@ -108,8 +108,7 @@ Normal forms: \lc terms that cannot be reduced any further. $P\in\Lambda$ is \te
 It is \textbf{strongly-normalizing} if all reductions of $P$ are finite. 
 We define $\xreduces \equiv \xreduces{\alpha} \cup \xreduces{\beta}$.
 
-% \textbf{Theorem (normalization)}: Each \lc term has a single normal form, up to $\alpha$-conversion.
-\todo{normalization}
+\textbf{Theorem (normalization)}: Each \lc term has at most one normal form, up to $\alpha$-conversion.
 
 \paragraph{Logic, conditionals and pairs}
 
@@ -219,7 +218,7 @@ Axiom:
 
 Rules:
 \[
-\begin{array}[cc]
+\begin{array}{cc}
 (\to_\mathrm{elim})&\frac{\Gamma \vdash \sigma \to \tau~~~~\Gamma \vdash \sigma}{\Gamma \vdash \tau} \\
 (\to_\mathrm{intr})&\frac{\Gamma, \sigma \vdash \tau}{\Gamma \vdash \sigma \to \tau}
 \end{array}
@@ -239,7 +238,7 @@ Axiom:
 
 Rules:
 \[
-\begin{array}[cc]
+\begin{array}{cc}
 (\to_\mathrm{elim})&\frac{\Gamma \vdash x: \sigma \to \tau~~~~\Gamma \vdash y: \sigma}{\Gamma \vdash (x y): \tau} \\
 (\to_\mathrm{intr})&\frac{\Gamma, x: \sigma \vdash y: \tau}{\Gamma \vdash (\lambda x. y): \sigma \to \tau}
 \end{array}
@@ -269,7 +268,7 @@ polymorphically and add $\forall \alpha. \sigma$ terms that quantify over types.
 $\forall \alpha. (\alpha \to \alpha$ is the type of all functions accepting a parameter of some type
 and returning a value of the same type.
 
-In the 1970s, Girard called this System $\script{F}$ and Reynolds called it \textsc{Forsythe}.
+In the 1970s, Girard called this System $\mathcal{F}$ and Reynolds called it \textsc{Forsythe}.
 These systems add $\lambda \alpha. \mathrm{Expression}$ and $(\mathrm{Expression} \mathrm{Type})$ to the set
 of terms, and $\forall \alpha. \mathrm{Type}$ to the set of types.
 
@@ -278,9 +277,11 @@ or a type to a term (instantiation). There are also two kinds of $\beta$-reducti
 
 We also extend our typing rules:
 \[
-\frac{\Gamma \vdash M : \sigma}{\Gamma \vdash \lambda \alpha. M : \forall \alpha. \sigma}
+\begin{array}{c}
+\frac{\Gamma \vdash M : \sigma}{\Gamma \vdash \lambda \alpha. M : \forall \alpha. \sigma} \\
 
 \frac{\Gamma \vdash M : \forall \alpha. \sigma}{\Gamma \vdash M \tau : \sigma[\tau/\alpha]}
+\end{array}
 \]
 
 Now we can type $\lambda x. x x$: it has type $(\forall \alpha. \alpha) \to \tau$.
@@ -294,19 +295,22 @@ It is provable in slightly stronger systems, making it a natural example of a tr
 \paragraph{Expressiveness of $\lambda2$}
 We define the type of natural numbers: $\forall \alpha. \alpha \to (\alpha \to \alpha) \to \alpha$.
 
-% We can also define iteration: If $c : \sigma$ and $g: \sigma \to \sigma$, we can define $\mathrm{It} c g : \mathrm{Nat} \to \sigma$
-% as $\lambda n. $ TODO
+We can also define iteration: If $c : \sigma$ and $g: \sigma \to \sigma$, we can define $\mathrm{It} c g : \mathrm{Nat} \to \sigma$
+as $\lambda n: \mathrm{Nat}. n \sigma c g$. The meaning of $\mathrm{It} c g n$ would be evaluating $g$ $n$ times beginning with $c$.
 
 \textbf{Theorem}: $\lambda2$ types exactly all primitive recursive functions. For example, Ackerman's function is
 recursive but not PR and therefore not typable in $\lambda2$.
 
 \textbf{Theorem (Girard, Reynolds, Curry-Howard)}: A second-order logic formula holds if it is inhabited in $\lambda 2$.
 
-It is possible to define the order connectives:
+It is possible to define the other connectives:
 \[
-\bottom := \forall \alpha. \alpha
-\sigma \wedge \tau := \forall \alpha. (\sigma \to \tau \to \alpha) \to \alpha
-\todo{the rest...}
+\begin{array}{c}
+\bottom := \forall \alpha. \alpha \\
+\sigma \wedge \tau := \forall \alpha. (\sigma \to \tau \to \alpha) \to \alpha \\
+\sigma \vee \tau := \forall \alpha. (\sigma \to \alpha) \to (\tau \to \alpha) \to \alpha \\
+\exists \alpha. \sigma := \forall \beta. (\forall \alpha. \sigma \to \beta) \to \beta
+\end{array}
 \]
 
 Constructive second order propositional logic - Peirce's law: 
