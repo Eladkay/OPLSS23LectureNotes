@@ -1,6 +1,107 @@
 \section{Logical Relations}
 \label{sec:logicalrels}
 \subauthor{Amal Ahmed}{Northeastern University}
+\plquote{``Logical relations turned ASMR.''}
 \begin{abstract}
 	\todo{Fill in}
 \end{abstract}
+
+
+
+\subsection{Motivation}
+Logical relations - a method for writing proofs. This method can generalize for many features of a type system, and has been
+very useful in proving a large variety of properties. For example:
+\begin{enumerate}
+\item \textbf{Termination}. Logical Relations can be used to prove termination properties of programming
+languages. For example, we will prove that the simply-typed \lc is terminating.
+\item \textbf{Type Soundness/Safety}. Pierce's textbook TAPL\footnote{Types and Programming Languages, chapter 8} discusses
+proofs by progress and preservation. This will be discussed further later.
+\item \textbf{Program Equivalence}. For example, for verification of subtle algorithms and implementations, or compiler optimizations. 
+\item \textbf{Cross-language Transformations}. It is even possible to write cross-language equivalence proofs, especially
+useful for cross-language transformations like compilers which essentially translate code between languages and
+representations.
+\item \textbf{Representation Independence}. The interface should not meaningfully leak details about the implementation
+of data structures. This is essentially also an equivalence property.
+\item \textbf{Parametricity}. Let's assume our language has no facilities to inspect values' types. Consider
+the parametric function type $\forall \alpha. \alpha \to \alpha$. What values inhabit this type? We claim
+that only the identity function inhabits this type. This is related to the topic of free theorems, discussed in
+Wadler's 1989 paper  ``Theorems for free!''\footnote{\href{https://www2.cs.sfu.ca/CourseCentral/831/burton/Notes/July14/free.pdf}
+{https://www2.cs.sfu.ca/CourseCentral/831/burton/Notes/July14/free.pdf}}.
+\item \textbf{Security Typing}. Security-typed languages have ``high security'' and ``low security'' types. For example,
+we may have $x: \mathbb{N}^\mathrm{H}$ and $y: \mathbb{N}^\mathrm{L}$. We would like to prevent explicit flow
+of information from high-security values to low-security observers, such as $y = x$. In addition, we'll also have to
+prevent implicit flow, like $y = x > 0 ? 1 : 0$. How can we prove that the type system does, in fact, preserve
+confidentiality? How would we even phrase that as a theorem?
+\end{enumerate}
+
+\subsection{Introduction to Logical Relations}
+We consider \emph{logical predicates} which are unary and \emph{logical relations} which are binary. 
+Logical predicates are denoted $P_\tau (e)$, where $\tau$ is a type and $e$ is a program. For example, termination and type
+soundness are unary properties. 
+Logical relations are denoted $P_\tau (e_1, e_2)$, where $\tau$ is a type and $e_1, e_2$ are programs. For example, program equivalence
+and representation independence are binary properties. This $\tau$ is usually taken as the ``source'' type, and there would
+also be a destination type.
+
+We will be proving the termination of all well-typed programs in the simply-typed \lc. This is also called \emph{normalization}.
+
+Consider the following variation on the simply-typed \lc:
+\[
+\begin{array}{rl}
+\tau ::= &\mathrm{bool} \mid \tau_1 \to \tau_2 \\
+e ::= &x \mid \mathrm{true} \mid \mathrm{false} \mid \mathrm{if}~e~\mathrm{then}~e_1~\mathrm{else}~e_2  \\
+& \mid \lambda x: \tau. e \mid (e e) \\
+v ::= & \mathrm{true} \mid \mathrm{false} \mid \lambda x: \tau. e \\
+E ::= & [ \cdot ] \mid \mathrm{if}~E~\mathrm{then}~e_1~\mathrm{else}~e_2 \mid E e_2 \mid v E \\
+& \\
+\mathrm{if~true~then}~e_1~\mathrm{else}~e_2 \mapsto e_1 &\\
+\mathrm{if~false~then}~e_1~\mathrm{else}~e_2 \mapsto e_2 &\\
+(\lambda x: \tau. e) v \mapsto e[v/x]
+\end{array}
+\]
+
+The rest of the typing and deduction rules are what we would expect.
+This is taken to be a call-by-value language and parameters must be evaluated (left to right) before function calls.
+
+We say that $e \Downarrow$ if there exists a value to which $e$ evaluates. Then, we wish to prove $\cdot \vdash e : \tau \to e \Downarrow$.
+We may try to prove this by induction: the base cases would be $\mathrm{true}$ and $\mathrm{false}$, and variables. These clearly all
+terminate. The inductive cases:
+\begin{itemize}
+\item Assume $\cdot \vdash e : \mathrm{bool},~\cdot\vdash e_1 : \tau,~\cdot\vdash e_2 : \tau$, and by the IH, their evaluation 
+terminates. Assume that $e \to^* v,~e_1\to^* v_1,~e_2 \to^* v_2$. We wish to conclude that the evaluation of the well-typed expression
+$\mathrm{if}~e~\mathrm{then}~e_1~\mathrm{else}~e_2$ terminates. This expression reduces to $\mathrm{if}~v~\mathrm{then}~e_1~\mathrm{else}~e_2$.
+Since $v$ is either $\mathrm{true}$ or $\mathrm{false}$, it terminates.
+\item As for the lambda case, it clearly terminates as it is already a value and it is non-reducable.
+\item Assume $\cdot \vdash e_1 : \tau_2 \to \tau_1$ and $\cdot \vdash e_2 : \tau_2$, and by the IH, their evaluation
+terminates. Assume that $e_1 \to^* \lambda x: \tau_2. e'$ and $e_2 \to^* v_2$. We wish to conclude that the evaluation of the
+well-typed expression $e_1 e_2$ terminates. This reduces to $e_1 e_2 \to^* (\lambda x: \tau_2. e') v_2 \to e'[v_2/x]$. 
+Now we're stuck, because we don't know anything about the bodies of lambda expressions. Our IH is not strong enough to prove this.
+\end{itemize}
+
+\subsection{Proof by Logical Relations}
+We will define a \emph{logical predicate} which will assist in this proof. We will define the predicate $N_\tau(e)$
+by induction on the type $\tau$:
+\[
+\begin{array}{rl}
+N_\mathrm{bool}(e)\leftrightarrow& \vdash e: \mathrm{bool} \wedge e \Downarrow \\
+N_{\tau_1 \to \tau_2}(e)\leftrightarrow& \vdash e: \tau_1 \to \tau_2 \wedge e \Downarrow\\
+& \wedge (\forall e' N_{\tau_1}(e') \to N_{\tau_2} (e e'))
+\end{array}
+\]
+
+We wish our predicate to have three main properties:
+\begin{enumerate}
+\item $\cdot \vdash e: \tau \to P_\tau(e)$
+\item $P_\tau(e) \to$ the condition we want to prove
+\item $P_\tau(e)$ should be preserved by the \textbf{elimination forms} for the type $\tau$.
+\end{enumerate}
+What the third condition means is that the predicate needs to be preserved by usages of that type. 
+For example, function application or usage of a Boolean condition.
+
+Proving the second property is trivial here, by the definition.
+For the first property, we shall prove that if $\Gamma \vdash e : \tau$ and $\gamma$ is a set of substitutions
+such that $\mathrm{dom}(\gamma) = \mathrm(dom){\Gamma}$ and $\forall x\in \mathrm{dom}(\Gamma) N_\Gamma(x) (\gamma(x))$,
+then $N_\tau(\gamma(e))$ for all $e$.
+
+We shall first prove the following substitution lemma: If $\Gamma \vdash e : \tau$ and $\mathrm{dom}(\gamma) = \mathrm{dom}({\Gamma})$ 
+and $\forall x\in \mathrm{dom}(\Gamma) N_{\Gamma(x)} (\gamma(x))$, then $\vdash \gamma(e) : \tau$.
+

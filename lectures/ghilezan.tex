@@ -1,6 +1,6 @@
 \section{Introduction to Barendregt's Lambda Cube}
 \subauthor{Silvia Ghilezan}{University of Novi Sad}
-\plquote{``That rock sure is a big flat rock.''}
+\plquote{``The looks of the pizza are the syntax and the flavor is the semantics''}
 \begin{abstract}
 	The Lambda Cube is a framework introduced by Henk Barendregt to systematically investigate eight different systems of lambda calculi with types. The basic system is the lambda calculus with simple types and all other systems are obtained as its three-dimensional extensions with: polymorphic types, type operators and dependent types.
 \end{abstract}
@@ -14,7 +14,7 @@ The ``lambda cube'' consists of 3 possible additions to the basic lambda type sy
 \end{itemize}
 
 \subsection{Background}
-Leibiniz tought of the ``Characteristica universalis'' - a universal language for describing all mathematical knowledge.
+Leibiniz sought to create a ``Characteristica universalis'' - a universal language for describing all mathematical knowledge.
 In 1928, Hilbert and Ackerman published their paper on the Entscheidungsproblem or ``decision problem'': Given all axioms
 of math, is there an algorithm that can tell if a proposition is deducable from the axioms?
 
@@ -321,6 +321,7 @@ Peirce's law is uninhabited. It is valid in classical logic but not in intuition
 Unfortunately, none of the three problems presented earlier is decidable for $\lambda 2$. A restriction of $\lambda 2$ has
 an easy type inference algorithm: Hindley-Milner type inference.
 
+\subsection{Dependency and \wlo}
 Terms and types are mutually dependent.
 \begin{itemize}
 \item Terms depending on terms: $\lambda \to$
@@ -330,4 +331,123 @@ Terms and types are mutually dependent.
 \end{itemize}
 
 
+The simply typed \lc has terms depending on terms: these are just functions. We have function abstraction and function applications.
+In $\lambda 2$ we also have \emph{type} abstraction: $\lambda \alpha : \star. P \alpha$ and \emph{type} application: $P\sigma$. 
+Instead of saying that $\tau$ is a type, we will write $\tau : \star$.
 
+Next, we will introduce \wlo, which has types depending on types. We define a set of ``meta-types''
+called \emph{kinds}: $\mathcal{K} = {\star, \star \to \star, ...}$. We denote ``$k$ is a kind'' as $k : \square$.
+Now, we can have types depending on types:  $\lambda \tau: \star. \tau \to \tau$. This expression has kind $\star \to (\star \to \star)$.
+In \wlo, types and terms are kept separate. If $\sigma : *, f : \sigma$, then we say that $f$ is a \emph{constructor} for $\sigma$.
+
+In \wlo, we introduce \emph{pseudo-expressions} as a unified framework for terms and types:
+\[
+\mathcal{T} ::= \mathcal{V} | \mathcal{C} | \mathcal{TT} | \lambda \mathcal{V} : \mathcal{T. T} | \mathcal{T \to T}
+\]
+
+Where ${\star, \square} = \mathcal{S} \subseteq \mathcal{C}$ is the set of \emph{sorts}. We will let $s\in {\star, \square}$ in
+perpetuity.
+We can now make determinations of the form $M : A$ where $M, A \in \mathcal{T}$.
+
+The typing rules:
+\begin{equation}
+\begin{array}{r@{\hspace{0.4em}}c@{\hspace{0.4em}}l}
+\text{(ax/sort)}&\vdash \star : \square& \\
+\text{(weak)}&\frac{\Gamma \vdash M : B~~~~\Gamma \vdash A : s}{\Gamma, x: A \vdash M : B}& \text{if } x \notin \Gamma \\
+\lambda&\frac{\Gamma, x. A \vdash M : B~~~~\Gamma \vdash A \to B : s}{\Gamma \vdash \lambda x: A. M : A \to B}& \\
+\text{(app)}&\frac{\Gamma \vdash M : A \to B~~~~\Gamma \vdash N : A}{\Gamma \vdash MN : B}&\\
+\text{(conv}_\beta\text{)}&\frac{\Gamma \vdash M : A~~~~\Gamma \vdash B : s}{\Gamma \vdash M : B}&A \equiv_\beta B \\
+\text{(type/kind)}&\frac{\Gamma \vdash A : s~~~~\Gamma \vdash B : s}{\Gamma \vdash A \to B : s}&\\
+\text{(var)}&\frac{\Gamma \vdash A : s}{\Gamma, x: A \vdash x : A}&\text{if } x \notin \Gamma
+\end{array}
+\end{equation}
+
+
+Specifically, the (type/kind) rule provides that no expression may mix types and kinds, and therefore terms and types.
+For example:
+\[
+\not\vdash \lambda \alpha: \star. \lambda \beta: \star. \lambda x : (\alpha \to \beta). x: \star \to \star \to ((\alpha \to \beta) \to (\alpha \to \beta))
+\]
+
+\wlo has the typical properties we know from other systems: uniqueness of types, Church-Rosser, subject reduction and strong normalization.
+Its expressive power is exactly the same as ST \lc: Only extended polynomials can be typed.
+
+\subsection{Types depending on terms}
+We now extend the notion of ``kinds'' to include kinds such as $A \to k$ where $A : \star$ is a type and $k : \square$ is a kind.
+This will allow us to have types depending on terms:
+\[
+f : A \to \star~~~~a: A \Rightarrow f a : \star
+\]
+
+In $\lambda P$, pseudo-expressions are defined as:
+\[
+\mathcal{T} ::= \mathcal{V} | \mathcal{C} | \mathcal{TT} | \lambda \mathcal{V} : \mathcal{T. T} | \Pi \mathcal{V: T. T}
+\]
+
+As before, we have ${\star, \square} = \mathcal{S} \subseteq \mathcal{C}$. The typing rules for $\lambda P$ are given here:
+\begin{equation}
+\begin{array}{r@{\hspace{0.4em}}c@{\hspace{0.4em}}l}
+\text{(ax/sort)}&\vdash \star : \square& \\
+\text{(weak)}&\frac{\Gamma \vdash M : B~~~~\Gamma \vdash A : s}{\Gamma, x: A \vdash M : B}& \text{if } x \notin \Gamma \\
+\lambda&\frac{\Gamma, x. A \vdash M : B~~~~\Gamma \vdash A \to B : s}{\Gamma \vdash \lambda x: A. M : \Pi A. B}& \\
+\text{(app)}&\frac{\Gamma \vdash M : \Pi x: A. B~~~~\Gamma \vdash N : A}{\Gamma \vdash MN : B[N/x]}&\\
+\text{(conv}_\beta\text{)}&\frac{\Gamma \vdash M : A~~~~\Gamma \vdash B : s}{\Gamma \vdash M : B}&A \equiv_\beta B \\
+\text{(type/kind} \Pi \text{)}&\frac{\Gamma \vdash A : \star~~~\Gamma, x: A \vdash B : s}{\Gamma \vdash \Pi x : A. B : s}&\\
+\text{(var)}&\frac{\Gamma \vdash A : s}{\Gamma, x: A \vdash x : A}&\text{if } x \notin \Gamma
+\end{array}
+\end{equation}
+
+In 1970, de Bruijn introduced \textsc{Automath} to represent mathematical theorems and proofs. In this system,
+a predicate on type $A$ is represented as $P : A \to \star$. For $a \in A$, $P a$ is valid if it is inhabited.
+$\forall x\in A. Px$ is translated as $\Pi x: A. Px$ and $A \to B$ is translated as $\Pi x: A. B$.
+
+For example, the following formula is valid: $(\forall x: A. \forall y: A. Pxy) \to (\forall x\in A. Pxx)$ because 
+the type $((\Pi x: A. \Pi y: A. Pxy) \to (\Pi x: A. P x x))$ is inhabited, for example by the 
+term $\lambda z: (\Pi x: A. \Pi y: A. P xy). \lambda x: A. z x x$.
+
+\subsection{The Cube}
+Now, we can consider all three extensions to the ST \lc: terms depending on types, types depending on terms and types
+depending on types.
+
+The cube is parametrized by $\mathcal{R}$: which dependencies are allowed. 
+$\mathcal{R} \in \mathcal{P}({\star, \square}\times{\star, \square})$
+
+For example, $\lambda P2$ which induces second order predicate logic has $\mathcal{R} = {(\star, \star), (\square, \star), (\star, \square)}$.
+The calculus of constructions $\lambda P \omega$ has $\mathcal{R} = {(\star, \star), (\square, \star), (\star, \square), (\square, \square)}$
+and corresponds to higher order predicate logic.
+$\lambda \omega$ (the not-weak one) has $\mathcal{R} = {(\star, \star), (\square, \star), (\star, \square)}$. 
+Actually, what makes \wlo ``weak'' is that it does not have dependent types.
+
+Each of these systems was historically developed separately. They were unified to one cube in the 1980s.
+
+\subsection{Exercises}
+
+\subsubsection{Exercise 1}
+
+\textbf{Prove that $\alpha$-conversion is an equivalence relation.}
+
+\emph{Solution.} We need to show three properties: symmetry, reflexivity, transitivity.
+\begin{itemize}
+\item \textbf{Symmetry}. Assume that $e_1 \equiv_\alpha e_2$. Then $e_2$ can be reached from $e_1$ by using 
+an injective name substitution. Then, $e_1$ can be reached from $e_2$ by using the inverse of that subsitution.
+For example, $\lambda x. x \equiv_\alpha \lambda y. y$ using ${x \mapsto y}$, and so $\lambda y. y \equiv_\alpha \lambda x. x$
+using ${y \mapsto x}$.
+\item \textbf{Reflexivity}. $e \equiv_\alpha e$ using the trivial subsitution ${}$.
+\item \textbf{Transitivity}. Assume that $e_1 \equiv_\alpha e_2$ using a name subsitution $f$ and $e_2 \equiv_\alpha e_3$
+using a name substitution $g$. Then applying $f$ and then $g$ proves the equivalence $e_1 \equiv_\alpha e_3$.
+% Consider $g\bar(x)$ which is equal to $g(x)$ for all inputs for which $g(x)$ is defined,
+% and otherwise $g\bar(x)=x$. Then the substitution $g\bar \circ f$ shows that $e_1 \equiv_\alpha e_3$.
+% For example, $\lambda x. \lambda y. xy \equiv_\alpha \lambda x. \lambda z. xz$ by $f = {y \mapsto z}$ and
+% $\lambda x. \lambda z. xz \equiv_\alpha \lambda p. \lambda k. pk$ by $g = {x \mapsto p, z \mapsto k}$.
+% Then, $g\bar = {x \mapsto p, z \mapsto k, y \mapsto y}$
+% too much rules-lawyering
+\end{itemize}
+\begin{flushright}
+$\square$ 
+\end{flushright}
+
+\textbf{Prove that every $\lambda$-term has at most one normal form.}
+
+\emph{Solution.} Assume that some $\lambda$-term $e$ has two normal forms $e_1$ and $e_2$. Then, $e \xreduces{\beta} e_1$ and 
+$e \xreduces{\beta} e_2$. According to the Church-Rosser theorem, there is an $e'$ such that $e_1 \reduces{\beta} e'$ and
+$e_2 \reduces{\beta} e'$. This is in contradiction to $e_1$ and $e_2$ being normal forms.

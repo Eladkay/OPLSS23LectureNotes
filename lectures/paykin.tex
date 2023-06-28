@@ -1,6 +1,6 @@
 \section{Introduction to Coq}
 \subauthor{Jennifer Paykin}{Intel}
-\plquote{``The looks of the pizza are the syntax and the flavor is the semantics''}
+\plquote{``The fun keyword turns the file into a party!''}
 \begin{abstract}
 	Coq is an interactive theorem prover that can be used to develop mechanized proofs of correctness for software systems. It uses dependent types and proof tactics to state and prove theorems about functional programs. This course will introduce Coq and the basics of interactive theorem provers through hands-on exercises and labs based on the Software Foundations curriculum.
 \end{abstract}
@@ -256,4 +256,74 @@ Theorem nat_bin_nat : forall n, bin_to_nat (nat_to_bin n) = n. Proof.
 	simpl. rewrite  binary_commute. rewrite IHn.
 	reflexivity. 
 Qed.
+\end{lstlisting}
+
+\subsection{Proofs as Programs}
+
+We saw that \lstinline{to_list_length} is a bit of a hassle. We can also write functions as proofs - this is because Coq is a
+constructive system. We can write:
+\begin{lstlisting}
+Definition to_list_length' : forall (A : Type) (n : nat) (ls : Vec A n), length (to_list ls) = n.
+Proof.
+	intros A n ls.
+	induction ls.
+	* simpl. (* unfold definitions *)
+		apply eq_refl.
+	* simpl.
+		rewrite IHls. (* transitivity of eq *)
+		reflexivity. (* apply eq_refl *)
+Qed.
+\end{lstlisting}
+
+This example demonstrates a few tactics: \lstinline{intros} creates hypotheses based on \lstinline{forall}s and parameters.
+\lstinline{induction l} splits the current goal into one for every constructor of the inductive type of \lstinline{l}, and gives us
+the induction hypothesis for each part. It is possible to give custom names for the variables and the IH in each case:
+\lstinline{induction l as [ | n' a ls' IH]}. Notice that the nil case has nothing created because it does not have any consisting
+parts.
+
+\lstinline{simpl} does $\beta$-reductions (and a bit more). \lstinline{apply l} applies
+an existing lemma \lstinline{l}\footnote{we could have also given an explicit proof term here: \lstinline{refine (eq_refl 0)}}. Also,
+\lstinline{reflexivity} is the same as \lstinline{apply eq_refl}.
+The tactic \lstinline{rewrite l} uses the hypothesis \lstinline{l} which is an equality and replaced occurences of the left-hand
+side with the right-hand side. It is possible to rewrite the other way as well: \lstinline{rewrite <- l}.
+The \lstinline{unfold} tactic unfolds definitions.
+
+The \lstinline{inversion} tactic uses the injectivity of datatype constructors and tries to perform unification. It usually
+contains useless variables that are equal to existing ones, so it is usually followed by the \lstinline{subst} tactic that substitutes
+equalities and then eliminates them. 
+
+It is possible to focus one goal at a time by using an itemization, which can be done with symbols like \lstinline{+, -, *} (in this example,
+\lstinline{*} is used). These can also be nested. Also, if more bullets are needed, repeating these characters consecutively also makes a 
+legal bullet. It is also possible to focus a specific subgoal using its number: \lstinline{2: }. A composition of tactics
+can be created by using curly braces around them.
+
+Instead of using \lstinline{intros}, we can also use the \lstinline{refine} tactic that accepts a proof term with holes and 
+creates goals to fill these holes. We could have replaced the first line of the ``definition'' with \lstinline{refine (fun A n ls => _)}. 
+There's also \lstinline{exact} which is like \lstinline{refine} but without holes.
+Also, \lstinline{induction} is just \lstinline{Fixpoint} with \lstinline{match}.
+
+After no goals remain, we can write \lstinline{Qed.} to perform some extra checks, construct the proof term and register it.
+While this looks like a proof, this does construct an actual term, which can be printed using \lstinline{Print to_list_length'}.
+Also, we can use \lstinline{Defined.} instead of \lstinline{Qed.} to preserve some computational properties.
+
+It is possible to use \lstinline{Theorem.} or \lstinline{Lemma.} instead of \lstinline{Definition.} and that would be the same.
+
+\subsection{Inductive Predicates}
+
+It is possible to define custom propositions and predicates using \lstinline{Inductive}:
+\begin{lstlisting}
+Inductive le : nat -> nat -> Prop :=
+	| le_O : forall n, le O n
+	| le_S : forall m, n, le m n -> le (S m) (S n) 
+\end{lstlisting}
+
+We can use recursively-structured propositions and use them to prove inhabitation of types such as
+\lstinline{forall m n : nat, le m n -> le n m -> m = n}. It is possible to prove this lemma using 
+a special induction principle: 
+
+\begin{lstlisting}
+le_ind : forall P : nat -> nat -> Prop, (forall n : nat, P 0 n) -> 
+	(forall n : nat, P 0 n) -> 
+	(forall m n : nat, le m n -> P m n -> P (S m) (S n)) -> 
+	forall n n0 : nat, le n n0, P n n0}.
 \end{lstlisting}
