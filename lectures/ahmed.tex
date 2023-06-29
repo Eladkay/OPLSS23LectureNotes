@@ -2,11 +2,6 @@
 \label{sec:logicalrels}
 \subauthor{Amal Ahmed}{Northeastern University}
 \plquote{``Logical relations turned ASMR.''}
-\begin{abstract}
-	\todo{Fill in}
-\end{abstract}
-
-
 
 \subsection{Motivation}
 Logical relations - a method for writing proofs. This method can generalize for many features of a type system, and has been
@@ -95,13 +90,182 @@ We wish our predicate to have three main properties:
 \item $P_\tau(e)$ should be preserved by the \textbf{elimination forms} for the type $\tau$.
 \end{enumerate}
 What the third condition means is that the predicate needs to be preserved by usages of that type. 
-For example, function application or usage of a Boolean condition.
+For example, function application or usage of a Boolean condition. Proving these properties will
+clearly imply what we want to prove, but it is a strengthening.
 
-Proving the second property is trivial here, by the definition.
+Proving the second property is trivial here, by the definition. Now, let $\gamma$ be a set of substitutions
+such that $\gamma \implies Gamma$: we will take this to mean
+$\mathrm{dom}(\gamma) = \mathrm(dom){\Gamma}$ and $\forall x\in \mathrm{dom}(\Gamma) N_\Gamma(x) (\gamma(x))$.
+$\gamma$ is a mapping from variable names to lambda expressions.
 For the first property, we shall prove that if $\Gamma \vdash e : \tau$ and $\gamma$ is a set of substitutions
-such that $\mathrm{dom}(\gamma) = \mathrm(dom){\Gamma}$ and $\forall x\in \mathrm{dom}(\Gamma) N_\Gamma(x) (\gamma(x))$,
-then $N_\tau(\gamma(e))$ for all $e$.
+such that $\gamma \models \Gamma$, then $N_\tau(\gamma(e))$ for all $e$. That means that $N_\tau$ is preserved
+under substitution.
 
-We shall first prove the following substitution lemma: If $\Gamma \vdash e : \tau$ and $\mathrm{dom}(\gamma) = \mathrm{dom}({\Gamma})$ 
-and $\forall x\in \mathrm{dom}(\Gamma) N_{\Gamma(x)} (\gamma(x))$, then $\vdash \gamma(e) : \tau$.
+We will use the following substitution lemma: If $\Gamma \vdash e : \tau$ and $\gamma \models \Gamma$, 
+then $\vdash \gamma(e) : \tau$. Also, we will use the following lemma: If $\cdot \vdash e : \tau$ and
+$e \to e'$ then $N_\tau (e) \leftrightarrow N_\tau (e')$ (forward and backward reduction preservation).
 
+Now, we will prove the following theorem which will imply the first property: 
+$\Gamma \vdash e : \tau \wedge \gamma \models \Gamma \to N_\tau (\gamma(e))$. 
+We will prove this by induction on the typing rules.
+
+For the case $\frac{}{\Gamma \vdash \mathrm{true} : \mathrm{bool}}$, we have $\gamma \models \Gamma$
+and want to show $N_\mathrm{bool} (\gamma(\mathrm{true}))$. This is equivalent to $N_\mathrm{bool} (\mathrm{true})$
+This does hold, and so we are done.
+
+For the case $\frac{\Gamma \vdash e_1 : \tau_2 \to \tau~~~~\Gamma \models e_2 : \tau_2}{\Gamma \vdash e_1 e_2 : \tau}$, 
+we have $\gamma \models \Gamma$ and want to show $N_\tau (\gamma(e_1 e_2))$. 
+This is equivalent to $N_\tau (\gamma(e_1) \gamma(e_2))$.
+By the induction hypothesis, $N_{\tau_2 \to \tau}(\gamma(e_1))$ and $N_{\tau_2}(\gamma(e_2))$.
+We can use the $\forall$ part of the definition of $N_{\tau_2 \to \tau}(\gamma(e'))$ with $e' = \gamma(e_2)$. 
+We know that $N_{\tau_2} (e')$ and so $N_\tau (\gamma(e_1) \gamma(e_2))$ which is what we wanted to show.
+
+For the case $\frac{\Gamma, x : \tau_1 \vdash e : \tau_2}{\Gamma \vdash \lambda x: \tau_1. e: \tau_1 \to \tau_2}$,
+we have $\gamma \models \Gamma$ and we want to show $N_{\tau_1 \to \tau_2} (\gamma(\lambda x: \tau, e))$.
+This is equivalent to $N_{\tau_1 \to \tau_2}(\lambda x: \tau_1 \gamma(e))$.
+We will do this by definition of $N_{\tau_1 \to \tau_2}$.
+\begin{enumerate}
+\item $\vdash e: \tau_1 \to \tau_2$ by our assumption and the definition of $\lambda$.
+\item $\lambda x: \tau. \gamma(e) \Downarrow$ because it's just a value.
+\item Let $e'$ such that $N_{\tau_1}(e')$. Show that $N_{\tau_2}((\lambda x: \tau_1. \gamma(e)) e')$.
+By the induction hypothesis, if $\gamma' \models \Gamma, x: \tau_1$, then $N_{\tau_2}(\gamma'(e))$.
+We will pick $\gamma' = \gamma[x\mapsto v']$ such that $N_{\tau_1} (v')$. This $v'$ is the 
+reduced form of $e'$. By forward-reduction preservation and $N_{\tau_1}(e')$, we can conclude 
+$N_{\tau_1}(v')$. We can conclude $N_{\tau_2}(\gamma'(e))$, which is $N_{\tau_2}(\gamma(e)[v'/x])$,
+which is $N_{\tau_2}((\lambda x: \tau_1. \gamma(e)) e')$ which is what we wanted to prove.
+\end{enumerate}
+\qed
+
+\subsection{Type Safety}
+We will prove the following theorem:
+
+\textbf{Theorem. (Type Safety)} If $\cdot \vdash e: \tau$ and $e\to^* e'$, then either
+$e'$ is a value or $\exists e''. e' \to e''$. \footnote{An alternative perspective on type safety: 
+\href{https://doi.org/10.1145/3236766}{https://doi.org/10.1145/3236766}}
+
+This means we never get stuck. This can be proven by the method of progress and preservation:
+
+\begin{itemize}
+\item \textbf{Progress.} If $\cdot \vdash e: \tau$ then either $e$ is a value or $\exists e''. e \to e'$.
+\item \textbf{Preservation.} If $\cdot \vdash e : \tau$ and $e \to e'$ then $\cdot \vdash e' : \tau$.
+\end{itemize}
+
+Preservation is typically proven by induction on the evaluation steps. We will prove type safety
+by using logical relations. % We will define the unary predicate $P_\tau (e)$.
+
+First, we will define a type-value set mapping and a type-expression set mapping:
+\[
+\begin{array}{c}
+\mathcal{V}\llb \mathrm{bool} \rrb = \{\mathrm{true, false}\} \\
+\mathcal{V}\llb \tau_1 \to \tau_2 \rrb = 
+\{\lambda x: \tau_1. e \mid \forall v \in \mathcal{V}\llb \tau_1 \rrb. e[v/x] \in \mathcal{E}\llb \tau_2 \rrb\} \\ 
+\\
+\mathcal{E}\llb \tau \rrb = \{e \mid \forall e'. (e \to^* e' \wedge \not\exists e''. e' \to e'') \to e' \in \mathcal{V}\llb \tau \rrb\}
+\end{array}
+\]
+
+The values are either booleans, or functions such that applying the function with an argument of the correct type
+gives an expression fo the correct type. The expressions are all those that when reduced completely give a value
+of the correct type.
+
+We would like to define a logical relation that has the following properties, and thus get what we want: 
+\begin{itemize}
+\item $\cdot \vdash e: \tau \to e \in \mathcal{E}\llb \tau \rrb$
+\item $e\in \mathcal{E} \llb \tau \rrb \to e$ is safe, i.e., making progress gets us to either a 
+value or something that can be reduced further.
+\end{itemize}
+
+First, we will define the ``interpretation'' of a typing environment:
+\[
+\begin{array}{rl}
+\mathcal{G}\llb \cdot \rrb = & \{\emptyset\} \\
+\mathcal{G}\llb \Gamma, x : \tau \rrb = & 
+\{\gamma[x\mapsto v] \mid \gamma \in \mathcal{G}\llb \Gamma \rrb \wedge v\in \mathcal{V}\llb \tau \rrb\}
+\end{array}
+\]
+This is the set of assignments consistent with the type environment.
+
+Now, we define \emph{semantic} type safety:
+\[
+\Gamma \models e: \tau \leftrightarrow \forall \gamma \in \mathcal{G}\llb \Gamma \rrb. \gamma(e) \in \mathcal{E}\llb \tau \rrb
+\]
+
+We shall now prove the \textbf{fundemental property} or \textbf{basic lemma} of our logical relation: If 
+$\Gamma \vdash e : \tau$ then $\Gamma \models e : \tau$.
+
+We will prove one case of the induction needed to prove this property:
+$\frac{\Gamma, x : \tau_1 \vdash e : \tau_2}{\Gamma \vdash \lambda x: \tau_1. e : \tau_1 \to \tau_2}$
+We need to show $\Gamma \models \lambda x: \tau_1. e : \tau_1 \to \tau_2$. Let $\gamma \in \mathcal{G}\llb \Gamma \rrb$.
+We need to show that $\gamma (\lambda x: \tau_1. e) \in \mathcal{E} \llb \tau_1 \to \tau_2 \rrb$. This is equivalent to
+$\lambda x: \tau_1. \gamma(e) \in \mathcal{E} \llb \tau_1 \to \tau_2 \rrb$.
+
+So, suppose $\lambda x: \tau_1. \gamma(e) \to^* e'$ and $e'$ is irreducible. Actually, since $\lambda x: \tau_1. \gamma(e)$ is
+a value, it is $e'$ with zero derivation steps. 
+We need to show that $\lambda x: \tau_1. \gamma(e) \in \mathcal{V}\llb \tau_1 \to \tau_2 \rrb$.
+Suppose that $v\in \mathcal{V}\llb \tau_1 \rrb$. We need to show $\gamma(e)[v/x] \in \mathcal{E} \llb \tau_2 \rrb$.
+
+By the IH, we know that $\Gamma, x : \tau \models e : \tau_2$. Instantiate the definition with $\gamma' = \gamma[x\mapsto v]$.
+Then, we get $\gamma[x\mapsto v]\in\mathcal{E} \llb \tau_2 \rrb$ and so $\gamma(e[v/x]) \in \mathcal{E} \llb \tau_2 \rrb$.
+And so, we are done.
+
+\qed
+
+\subsection{Recursive Types}
+
+We will define a new type constructor: tagged unions.
+
+\[
+\begin{array}{rl}
+\mathcal{V}\llb \tau_1 + \tau_2 \rrb = & \{\text{inl~} v_1 \mid v_1 \in \mathcal{V} \llb \tau_1 \rrb\} \\
+& \cup \{\text{inr~} v_2 \mid v_2 \in \mathcal{V} \llb \tau_2 \rrb\}
+
+\end{array}
+\]
+
+
+Consider the following type in Coq:
+\begin{lstlisting}
+Inductive tree : Set =
+| Leaf : tree
+| Node : nat -> tree -> tree.
+\end{lstlisting}
+
+This can be written by using a recursive equation: $\alpha = 1 + \mathbb{N}\times \alpha\times \alpha$.
+This expands to $\alpha = 1 + \mathbb{N}\times (1 + \mathbb{N}\times \alpha\times \alpha)\times (1 + \mathbb{N}\times \alpha\times \alpha)$,
+and so on.
+
+Essentially, if we consider $F = \lambda x: \star. 1 + \mathbb{N}\times \alpha\times \alpha$, then we're looking for
+a fixed point of $F$.
+
+We will define a fixed-point type constructor: $\mu \alpha. F(\alpha)$. We will take this constructor to have
+the property: $\mu \alpha. F(\alpha) = F(\mu \alpha. F(\alpha))$.
+
+In other words, if we let $\tau = F(\alpha)$: $\mu \alpha. \tau = F(\mu \alpha. \tau) = \tau[\mu \alpha. \tau / \alpha]$/
+Moving to the right in this equation is also called ``unfolding'' and moving to the left is ``folding''.
+
+We will extend our simply-typed \lc and add $\tau ::= \mu \alpha. \tau$ as a type derivation.
+Also, add $e ::= \mathrm{fold} e \mid \mathrm{unfold} e$ to the expressions and $v ::= \mathrm{fold} v$
+to the values. The operational semantics are $\mathrm{unfold} (\mathrm{fold} v) \to v$.
+\todo{Add typing rules}
+
+Now, we can define the type of integer lists as $\mu \alpha. 1 + (\mathbb{N} \times \alpha)$.
+
+We can type-check self application: $\mathrm{SA} = \lambda x: (\mu \alpha. \alpha \to \tau). (\mathrm{unfold} x) x$.
+Now, we can type-check $\Omega: \tau = \mathrm{SA} (\mathrm{fold SA})$. Wait, what's $\tau$? It's completely
+arbitrary. This means that $\Omega$ evaluates to a value of any type $\tau$. It's fine because it never finishes
+evaluation.
+
+We would like to modify our logical relation to prove type safety. 
+We may try to define 
+$\mathcal{V} \llb \mu \alpha. \tau \rrb = \{ \mathrm{fold} v \mid v \in \mathcal{V}\llb \tau[\mu \alpha. \tau / \alpha] \rrb\}$.
+However, this is not well founded. 
+
+This problem has remained open for a while. 
+In the second edition of ATTAPL\footnote{\href{https://www.cis.upenn.edu/~bcpierce/attapl/}{https://www.cis.upenn.edu/~bcpierce/attapl/}}, 
+it was given as an ``exercise'' with infinitely many difficulty stars. The solution
+is using ``step index logical relations''. Essentially, this is a stratification of $\mathcal{V}$.
+What $\mathcal{V}_k$ will be is ``values that are indistinguishable from corresponding values from $\mathcal{V}$ using up to
+$k$ steps''.
+
+The Boolean case is easy because it does not change: $\mathcal{V}_k\llb \mathrm{bool} \rrb = \{\mathrm{true}, \mathrm{false}\}$.
+\todo{Write all other cases.}

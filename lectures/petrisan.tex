@@ -1,6 +1,129 @@
 \section{Introduction to Category Theory}
 \subauthor{Daniela Petrisan}{Institut de Recherche en Informatique Fondamentale}
 \plquote{``Learning math from Wikipedia is like learning a language from a dictionary.''}
-\begin{abstract}
-	\todo{Fill in}
-\end{abstract}
+\subsection{Overview}
+Category theory links many topics together. It involves a few fundemental concepts:
+\begin{enumerate}
+\item Categories.
+\item Functors.
+\item Natural transformations.
+\item Limits and colimits.
+\item Adjunctions
+\item Monads
+\end{enumerate}
+Ok, maybe more than a few. This course will demonstrate category theory using examples from
+the field of \emph{automata theory}, like minimization and learning algorithms, as well
+as the field of \emph{computational effects}. Category theory involves objects and structures,
+and relations between them. 
+For example, the objects can be sets, denoted $A, B, C$, and the relations can be functions:
+\begin{figure}
+\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=2.1cm,scale = 1,transform shape]
+\tikzset{pathsnake/.style={decorate, decoration={snake}, draw=black}}; 
+\node      (A)                              {A}; 
+\node      (B)      [right of=A]            {B}; 
+\node      (C)      [below of=B]            {C}; 
+\node      (D)      [right of=C]            {D}; 
+\draw      (A)   	node {$f$}				(B);
+\draw      (B)   	node {$g$}				(C);
+\draw      (A)   	node {$g\circ f$}		(C);
+\draw      (C)   	node {$h$}				(D);
+\draw      (B)   	node {$h\circ g$}		(D);
+\end{tikzpicture}
+\end{figure}
+\todo{make this work}
+
+\subsection{Introduction to Categories}
+\textbf{Definition. (Category)} A category $C$ consists of the following data:
+\begin{itemize}
+\item A class of objects $A, B, ...$
+\item A class of arrows (morphisms) $f, g, h, ...$. 
+For each $f$ we have $\mathrm{dom}(f)$ and $\mathrm{codom}(f)$, and we write
+$f: A \to B$ if $A = \mathrm{dom}(f)$ and $B = \mathrm{codom}(f)$.
+\item A partial composition: If $f: A \to B$ and $g: B \to C$, we have 
+$g \circ f = A \to C$.
+For each $A \in C$ we have an identity arrow: $1_A : A \to A$.
+% The associativity of composition and unit axioms hold: $(f \circ g) \circ h \equiv f \circ (g \circ h)$ and $f \circ 1_A \equiv f$.
+\end{itemize}
+
+We will denote the collection of morphisms from $A$ to $B$: $C(A, B)$ or $\mathrm{hom}(A, B)$.
+
+\textbf{Examples:}
+\begin{center}
+\begin{tabular}{ |p{2cm}|p{2cm}|p{3cm}|p{3cm}|p{3cm}| } 
+ \hline
+ Category & Objects & Arrows & Composition & Identity\\ 
+ \hline
+ \hline
+ \textsc{Set} & Sets & Functions & Function composition & Identity function\\ 
+ \hline
+ \textsc{Rel} & Sets & Relations & Relation composition & Empty relation\\
+ \hline
+ $(X, \leq)$ & $x\in X$ & $x \to y \leftrightarrow x \leq y $ & Transitivity & For each $x\in X$, $(x, x)$ \\
+ \hline
+ $(M, \cdot, 1_M)$, a monoid & ${X}$ & $m \in M$ & $\cdot$ & $1_M$ \\
+ \hline
+ \textsc{Mon} & Monoids & Monoid homomorphisms & Homomorphism composition & Identity function \\
+ \hline
+ \textsc{Top} & Topological spaces & Continuous maps & Map composition & Identity map \\
+ \hline
+ \textsubscript{\textsc{Vec}}{$\mathbb{K}$} & Vector spaces & Linear transformations & Transformation composition & Identity transformation \\
+ \hline
+ \textsc{Pre} & Preorders & Monotone maps & Map composition & Identity map \\
+ Free category on a graph $C(G)$ & $G$'s vertices &Paths from $G$, including the empty path& Path concatenation & Empty path \\
+ \hline
+\end{tabular}
+\end{center}
+
+\textbf{Example.} Fix a finite set $A$ and consider the graph:
+\begin{figure}
+\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=2.1cm,scale = 1,transform shape]
+\tikzset{pathsnake/.style={decorate, decoration={snake}, draw=black}}; 
+\node      (in)                               {in}; 
+\node      (st)      [right of=in]            {st}; 
+\node      (out)     [right of=st]           {out}; 
+\draw      (in)   	node {$\rhd$}	  (st);
+\draw      (st)   	node {$a\in A$}			  (st);
+\draw      (st)   	node {$\bowtie$}		  (out);
+\end{tikzpicture}
+\end{figure}
+\todo{make this work}
+
+Then if $J$ is the free category on this graph, then $J(\mathrm{in, st}) = \{\rhd w \mid w\in A^*\}$.
+Actually, $J(\mathrm{st, st}) \cong A^*$.
+
+
+\subsection{Functors}
+Let $C, D$ be two categories. A \textbf{functor} $F: C \to D$ associates: 
+\begin{enumerate}
+\item To each object $A$ in $C$ an object $FA$ in $D$.
+\item To each morphism $f: A \to B$ in $C$, a morphism $Ff : FA \to FB$ such that $F (f \circ g) = F(f) \circ F(g)$ and $F(1_A) = 1_FA$.
+\end{enumerate}
+
+\textbf{Examples:}
+\begin{itemize}
+\item \textbf{Forgetful functor} $U : \mathsc{Mon} \to \mathsc{Set}$ by $(M, \cdot, 1_M) \mapsto M$ and 
+$f: (M, \cdot, 1_M) \to (N, \cdot, 1_N) \mapsto Uf: M \to N$
+\item \textbf{Free construction functor} $F : \mathsc{Set} \to \mathsc{Mon}$ by $X \mapsto (X^*, \cdot, \varepsilon)$
+and $f: A \to B \mapsto Ff: (A^*, \cdot, \varepsilon) \to (B^*, \cdot, \varepsilon)$
+\end{itemize}
+\todo{add more examples}
+
+\subsection{Automata as Categories}
+
+Cosnider the following category, which represents a deterministic automaton over the alphabet $A$:
+\begin{figure}
+\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=2.1cm,scale = 1,transform shape]
+\tikzset{pathsnake/.style={decorate, decoration={snake}, draw=black}}; 
+\node      (1)                               {1}; 
+\node      (Q)      [right of=in]            {$Q$}; 
+\node      (2)     [right of=st]             {2}; 
+\draw      (1)   	node {$i$}	  			 (2);
+\draw      (Q)   	node {$a\in A$}			 (Q);
+\draw      (Q)   	node {$f$}		  		 (2);
+\end{tikzpicture}
+\end{figure}
+\todo{make this work}
+
+Where $Q$ is some set, $1 = \{\star\}$, $2 = \{\top, \bottom\}$, $i(\cdot)$ is the initial state of the automaton and $f$ is the
+characteristic function of the set of accepting states,
+\todo{add nfa, wfa, and examples}

@@ -442,12 +442,43 @@ using a name substitution $g$. Then applying $f$ and then $g$ proves the equival
 % Then, $g\bar = {x \mapsto p, z \mapsto k, y \mapsto y}$
 % too much rules-lawyering
 \end{itemize}
-\begin{flushright}
-$\square$ 
-\end{flushright}
+\qed
 
 \textbf{Prove that every $\lambda$-term has at most one normal form.}
 
-\emph{Solution.} Assume that some $\lambda$-term $e$ has two normal forms $e_1$ and $e_2$. Then, $e \xreduces{\beta} e_1$ and 
-$e \xreduces{\beta} e_2$. According to the Church-Rosser theorem, there is an $e'$ such that $e_1 \reduces{\beta} e'$ and
-$e_2 \reduces{\beta} e'$. This is in contradiction to $e_1$ and $e_2$ being normal forms.
+\emph{Solution.} Assume that some $\lambda$-term $e$ has two different normal forms $e_1$ and $e_2$. Then, $e \xreduces{\beta} e_1$ and 
+$e \xreduces{\beta} e_2$. According to the Church-Rosser theorem, there is an $e'$ such that $e_1 \xreduces{\beta} e'$ and
+$e_2 \xreduces{\beta} e'$. This is in contradiction to $e_1$ and $e_2$ being different normal forms. Notice that this works even if
+$e' = e_1$ or $e' = e_2$.
+\qed
+
+\textbf{Prove that for every $\lambda$-term $F$, $F (\textbf{Y} F) \equiv_\beta \textbf{Y} F$}
+
+\emph{Solution.} Since $\equiv_\beta$ is symmetric, we'll prove it the other way around.
+\[
+\begin{array}{rl}
+\textbf{Y} F & = (\lambda f. (\lambda x. f (x x)) (\lambda x. f (x x))) F \\
+& \equiv_\beta (\lambda x. F (x x)) (\lambda x. F (x x)) \\
+& \equiv_\beta F ((\lambda x. F (x x)) (\lambda x. F (x x)))  \\
+& \equiv_\beta F (\textbf{Y} F) 
+\end{array}
+\]
+\qed
+
+\textbf{Prove that $((\alpha \to \beta) \to \alpha) \to \alpha$ is not inhabited in $\lambda \to$.}
+
+\emph{Solution.}
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -292,6 +292,9 @@ The \lstinline{inversion} tactic uses the injectivity of datatype constructors a
 contains useless variables that are equal to existing ones, so it is usually followed by the \lstinline{subst} tactic that substitutes
 equalities and then eliminates them. 
 
+\lstinline{generalize dependent varname} is the opposite of \lstinline{intro}/\lstinline{intros} - it creates \lstinline{forall}
+clauses.
+
 It is possible to focus one goal at a time by using an itemization, which can be done with symbols like \lstinline{+, -, *} (in this example,
 \lstinline{*} is used). These can also be nested. Also, if more bullets are needed, repeating these characters consecutively also makes a 
 legal bullet. It is also possible to focus a specific subgoal using its number: \lstinline{2: }. A composition of tactics
@@ -327,3 +330,44 @@ le_ind : forall P : nat -> nat -> Prop, (forall n : nat, P 0 n) ->
 	(forall m n : nat, le m n -> P m n -> P (S m) (S n)) -> 
 	forall n n0 : nat, le n n0, P n n0}.
 \end{lstlisting}
+
+\subsection{Conversion rules}
+Coq is based on conversion rules that are used to determine whether two terms are equivalent from
+the perspective of CIC, or \emph{convertible}.
+These are a few conversion rules: $\beta$-reduction eliminates \lstinline{fun}, $\delta$-reduction replaces a constant
+or variable with its definition, $\zeta$-reduction eliminates \lstinline{let}, $\eta$-reduction replaces 
+\lstinline{f : forall a: A, B} with \lstinline{fun x : A => f x}. This is similar to the notion of 
+\emph{definitional equality}. It is possible to change terms to a convertible term using \lstinline{change (_ -> _)}.
+
+Note that conversion rules are distinct from equality - the notion of two terms representing the same abstract
+concept. This is a standard library feature, usually defined as:
+\begin{lstlisting}
+Inductive eq {A : Type} (x : A) : A -> Prop := eq_refl : eq x x.
+\end{lstlisting}
+
+In Coq, all evaluation occurs during type checking. As a result, all Coq functions terminate. Recursive functions
+must be \emph{guarded} by a structurally-decreasing argument for termination proofs.
+
+\subsection{Booleans and Propositions}
+In Coq, we have two ways of expressing logical claims. One is using Booleans and the other is using propositions. 
+\lstinline{bool} is an inductive type from the standard library with two constructors. \lstinline{Prop} is a built-in
+type inhabited by types such as \lstinline{Inductive True : Prop := true_cons.} which is inhabited and
+\lstinline{Inductive False : Prop := .} which is uninhabited. A \lstinline{Prop} is ``decided'' by checking
+if it is inhabited. A \lstinline{bool} is decided by checking if it reduces to \lstinline{true} or
+\lstinline{false}.
+
+The \lstinline{bool} type is, therefore, decidable, unlike the \lstinline{Prop} type. However, only \lstinline{Prop}
+types can be used for rewriting equalities. It is possible to define lemmas asserting that certain properties
+are decidable:
+\begin{lstlisting}
+Lemma string_eqb_dec : forall n m : string, n = m \/ n <> m.
+\end{lstlisting}
+
+This may seem like a disadvantage of \lstinline{Prop}, but actually that just makes it more expressive. For example,
+there does not exist a function \lstinline{nat -> bool} that returns \lstinline{true} if and only if 
+``the n\textsuperscript{th} Turing machine halts''. However, there does exist such a function \lstinline{nat -> Prop}.
+
+\todo{Write about functional extensionality}
+
+\subsection{Coq Automation}
+
