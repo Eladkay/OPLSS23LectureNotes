@@ -268,4 +268,26 @@ What $\mathcal{V}_k$ will be is ``values that are indistinguishable from corresp
 $k$ steps''.
 
 The Boolean case is easy because it does not change: $\mathcal{V}_k\llb \mathrm{bool} \rrb = \{\mathrm{true}, \mathrm{false}\}$.
-\todo{Write all other cases.}
+\[
+\begin{array}{c}
+\mathcal{V}_k\llb \tau_1 \to \tau_2 \rrb = \{\lambda x: \tau_1. e \mid \forall j \leq k. \forall v\in \mathcal{V}_j\llb\tau_1 \rrb.
+e[v/x] \in \mathcal{E}_j \llb \tau_2 \rrb\} \\
+\mathcal{V}_k\llb\mu \alpha. \tau \rrb = \{\mathrm{fold~} v \mid \forall j < k. v \in 
+\mathcal{V}_j\llb \tau[\mu \alpha. \tau / \alpha \rrb\} \\
+\mathcal{E}_k \llb \tau \rrb = \{e \mid \forall j < k. \forall e'. e \to^j e' \wedge e' 
+\mathrm{~is~irreducable} \to e' \in \mathcal{V}_{k - j}\llb \tau \rrb\} \\
+\mathcal{G}_k \llb \cdot \rrb = \{\cdot \}
+\mathcal{G}_k \llb \Gamma, x: \tau \rrb = \{\gamma[x\mapsto v] \mid \gamma \in \mathcal{G}_k \llb \Gamma \rrb 
+\wedge v\in \mathcal{V}_k\llb \tau \rrb\} \\
+\Gamma \models e : \tau \equiv \forall k \geq 0. \forall \gamma \in \mathcal{G}_k \llb \Gamma 
+\rrb. \gamma(e) \in \mathcal{E}_k \llb \tau \rrb
+\end{array}
+\]
+
+\textbf{Theorem. (Fundemantal Property)} $\Gamma \vdash e : \tau \to \Gamma \models e : \tau$
+
+The stratification is needed in cases where we have circularities. Recursive types are one such case.
+Another case is when we have mutable references: these references may have circular dependencies.
+Non-circular operations can count as ``zero-step'' operations and not change the level we are on.
+In this case, the only ``one-step'' operation we need is $\mathrm{fold}$.
+

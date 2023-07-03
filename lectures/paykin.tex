@@ -371,3 +371,10 @@ there does not exist a function \lstinline{nat -> bool} that returns \lstinline{
 
 \subsection{Coq Automation}
 
+Coq includes some \emph{tacticals} - tactics that operate on tactics. The most simple one is \lstinline{try tactic}: it tries
+to run a tactic, and if it fails, it does nothing. This is especially good combined with the semicolon tactical:
+\lstinline{tactic1 ; tactic2} performs \lstinline{tactic1} and then performs \lstinline{tactic2} on each resulting
+subgoal.
+
+Another tactical is \lstinline{repeat tactic} - it repeats the tactic until it can make no more progress. Note that
+this can never terminate.
