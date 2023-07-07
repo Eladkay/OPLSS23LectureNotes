@@ -1,5 +1,227 @@
 \section{Program Analysis}
 \subauthor{Sukyoung Ryu}{KAIST}
+\plquote{``I feel special enough to be excluded from $\forall$ quantifiers of theorems I don't like''}
 \begin{abstract}
 	Program analysis estimates the behaviors of programs even without running them. This course will introduce fundamental theories, designs, and implementations of program analysis and share its real-world applications.
 \end{abstract}
+
+\subsection{Overview}
+
+This course will survey some concepts in static analysis, but first, we will see an example
+for verification of cross-language Android\textsuperscript{TM} applications.
+This work is called HybriDroid and it connects Android Java code to JavaScript code,
+despite JavaScript being a dynamically and weakly typed language.
+Java's semantics is very different than JavaScript's. 
+For example, Java has overloading and exceptions unlike JavaScript.
+The authors analyzed examples of cross-language applications and found
+several bugs manifested as ``type errors''.
+They built a static analyzer engine - HybriDroid.
+
+Software bugs kill people. In 1991, a floating-point roundoff bug
+in the Patrio missile caused the deaths of 28 American soldiers.
+Software bugs still haunt us to this day: for example, Heartbleed
+in 2014. The earlier bugs are discovered, the cheaper it is to fix them.
+
+We will write analysis for various properties that
+interest us in a program, such as safety, liveness
+and information flow.
+
+\textbf{Safety properties:} ``A program never exhibits a behavior observable within finite time''.
+In other words, bad things will never occur. Bad things can include integer overflow,
+buffer overrun, deadlocks, etc. We wish to prove that no execution reaches
+an error state.
+
+How can we prove that our program never does a ``bad thing''?
+\begin{itemize}
+\item Consider the state space of the program.
+\item These states can be either good or bad.
+\item Prove some property that does not hold for
+bad states, and holds for as many good states as possible. This property
+is an \textbf{invariant}.
+\item Prove that the initial state satisfies the invariant and every
+transition preserves the invariant.
+\end{itemize}
+
+Invariants are supposed to always hold.
+
+\textbf{Liveness properties:} ``A program never exhibits a behavior observable only after infinite time''.
+In other words, good things will eventually occur. Good things can include termination,
+fairness, etc. We wish to prove that all executions eventually reach target
+states.
+
+How can we prove that our program will eventually do a ``good thing''?
+\begin{itemize}
+\item Consider the state space of the program.
+\item These states can be either target states or non-target states.
+\item Prove some property that holds for as many target states as possible,
+and does not hold for non-target states. This property is a \textbf{variant}.
+\item Prove that transitions evolve the variant towards satisfying (and thus
+reaching a target state).
+\end{itemize}
+
+Safety and liveness properties are both \emph{trace properties}.
+A trace property is a semantic property defined by a set
+of execution traces satisfying the property. All trace properties
+are the conjuction of a safety property and a liveness property.
+
+\textbf{Information flow properties:} Properties stating the abscence of dependence
+between pairs of executions. These are used, for example, for verification
+of security properties.
+
+\textbf{Theorem, (Rice)} Any non-trivial semantic property is undecidable.
+
+This means that automatic, terminating and exact reasoning
+is impossible. If we give up automatic reasoning, we
+get assisted proving which requires expertise and manual effort.
+If we give up termination, we get testing or model checking which may
+not terminate. If we give up exactness, we get static analysis,
+which may return spurious results.
+
+We define two ways in which an analysis tool $A$ csn be exact 
+with respect to a program $P$:
+\begin{itemize}
+\item Soudness: If $A$ says that $P$ has a property, then $P$ really has that peoprty.
+\item Completeness :If $P$ has a property, then $A$ will say that $P$ has
+the property.
+\end{itemize}
+
+It is possible to write both sound but incomplete analysies and complete and unsound ones.
+For example, testing (incl. random testing, concolic testing, etc.) is an unsound yet
+complete analysis. 
+
+Model checking is a verification method in which we make a model of the real program
+and then verify our specification on the model instead on the real program. 
+Model checking is sound and complete with respect to the model.
+The problem is that model checking may introduce \emph{spurious counterexamples}
+that do not exist in the real program. This can be solved by \emph{abstraction refinement} -
+the automatic refining of the model, for example by using CEGAR (counterexample guided abstraction
+refinement). Another problem is the state explosion problem: there are exponentially many paths
+of a certain length.
+
+Static analysis - an overapproximation of the set of all program behaviors. In general,
+static analysis is sound and automatic but incomplete (it may have spurious results).
+Static analysis can be based on \emph{abstract interpretation}.
+
+\subsection{Operational and Denotational Semantics}
+Consider the following simple imperative language:
+\[
+\begin{array}{rcll}
+E & ::= & & \text{arithmetic expressions} \\
+& | & n & \text{integer constants} \\
+& | & E \odot E & \text{binary operation} \\
+B & ::= & & \text{Boolean expression} \\
+& | & \mathrm{true} | \mathrm{false} & \text{Boolean constants} \\
+& | & E \_ E & \text{comparison expressions} \\
+C & ::= && \text{commands} \\
+& | & \mathrm{skip} & \text{command that does nothing} \\
+& | & C ; C & \text{sequence} \\
+& | & x := E & \text{assignment} \\
+& | & \mathrm{input}(x) & \text{reading a value} \\
+& | & \mathrm{if~} B \mathrm{~then~} C \mathrm{~else~} C & \text{conditional command} \\
+& | & \mathrm{while~} B C & \text{loop command}
+\end{array}
+\]
+
+\textbf{Operational Semantics}: \emph{how} to compute the execution result (transitional style).
+
+
+\textbf{Denotational Semantics}: \emph{what} the execution result is (compositional style).
+The denotational semantics describes the meaning of the program in a mathematical sense.
+Program semantics are taken to be a function $\llb P \rrb$ from input states
+to output states. We will consider semantic domains, which are sets of semantic objects.
+Memory will, then, be a mapping between variables and values.
+
+We can define the denotational semantics of our expressions:
+\[
+\begin{array}{rcl}
+\llb E \rrb : M & \to & Z \\
+\llb n \rrb (m) & = & n \\
+\llb x \rrb (m) & = & m(x) \\
+\llb E_1 \odot E_2 \rrb (m) & = & \llb E_1 \rrb(m) \odot \llb E_2 (m) \rrb \\
+&&\\
+\llb B \rrb : M & \to & B \\
+\llb \mathrm{true} \rrb(m) & = & \mathrm{true} \\
+\llb \mathrm{false} \rrb(m) & = & \mathrm{false} \\
+\llb E_1 \_ E_2 \rrb(m) &=& \llb E_1 (m) \rrb \_ \llb E_2 (m) \rrb
+\end{array}
+\]
+
+Our commands are maps from states to states:
+\[
+\begin{array}{rcll}
+\llb C \rrb : M & \to & M & \\
+\llb \mathrm{skip} \rrb & = & m & \\
+\llb C_0 ; C_1 \rrb (m) &=& \llb C_1 \rrb (\llb C_0 (m) \rrb) & \\
+\llb x := E \rrb (m) &=& m\{x \mapsto \llb E \rrb(m)\} & \\
+\llb \mathrm{input}(x) \rrb(m) & = & m\{x \mapsto n\} & \\
+\llb \mathrm{if~} B \mathrm{~then~} C_1 \mathrm{~else~} C_2 \rrb (m) & = & \llb C_1 \rrb (m) & \text{if~} \llb B \rrb (M) = \mathrm{true} \\
+\llb \mathrm{if~} B \mathrm{~then~} C_1 \mathrm{~else~} C_2 \rrb (m) & = & \llb C_2 \rrb (m) & \text{if~} \llb B \rrb (M) = \mathrm{false} \\
+\end{array}
+\]
+
+What about $\mathrm{while}$ loops? We may try to define loops this way:
+\[
+\begin{array}{rcll}
+\llb \mathrm{while~} B C \rrb (m) & = & \llb \mathrm{while~} B C \rrb (\llb C \rrb (m))  & \text{if~} \llb B \rrb (M) = \mathrm{true} \\
+\llb \mathrm{while~} B C \rrb (m) & = & m  & \text{if~} \llb B \rrb (M) = \mathrm{false} \\
+\end{array}
+\]
+
+But that is not compositional... it depends on itself recursively.
+
+We shall define it in a fixed-point style:
+\[
+\llb \mathrm{while~} B C \rrb = \mathcal{F}_{B, C} (\llb \mathrm{while~} B C \rrb)
+\]
+
+Where:
+\[
+\mathcal{F}_{B, C} (X) = \lambda m. 
+\begin{cases} 
+X(\llb C \rrb(m)) & \text{if~} \llb B \rrb(m) = \mathrm{true} \\
+m & \text{if~} \llb B \rrb(m) = \mathrm{false}
+\end{cases}
+\]
+
+Now it's compositional, but we must ask if the equation even has a solution, and if so is it unique, and also
+we need to figure out how to compute it. The key insight is to look at the semantics
+as a complete partial order. Also, notice that all functions are continuous in that sense.
+Then, the least upper bound can be computed.
+
+\subsection{Abstract Interpretation}
+
+What is abstract interpretation?
+\begin{itemize}
+\item A powerful framework for designing static analysis that is powerful and correct
+\item Created by Patrick and Radhia Cousout
+\item ``Everything is abstract interpretation''
+\end{itemize}
+
+
+The way AI works is by giving an \emph{abstract semantics} for expressions, values and commands.
+The abstract semantics are denoted $\llb \cdot \rrb^\#$. We seek conservative, sound and terminating
+sound analyses. 
+
+Defining an abstract interpretation usually follows these steps:
+\begin{enumerate}
+\item \textbf{Define standard semantics}: As we did in the previous subsection.
+\item \textbf{Define concrete\footnote{Also called ``collecting''} semantics}: This is a formalization
+of all possible program behaviors. This is usually a simple extension of the standard
+semantics. For example, given some standard semantics $\llb C \rrb : M \to M$, we
+can define concrete semantics $\llb C \rrb_\mathcal{P} : \mathcal{P}(M) \to \mathcal{P}(M)$.
+For example, we have $\llb x \rrb_\mathcal{P} = \lambda M. \{m(x) \mid m \in M\}$.
+\item \textbf{Define abstract semantics}: This is a formalization of
+\emph{abstract} program executions, in a way that soundly subsumes semantic behaviors
+of the program.
+For this purpose, we shall define an abstract domain $D^\#$ which will have a complete partial order.
+Also, we shall define an abstract semantics function that is either monotone or extensive.
+The result of our analysis will be the computation of the upper bound of the function.
+
+We need to specify a relation between our concrete domain $D$ and our abstract domain $D^\#$
+using a Galois connection: an abstraction function $\alpha : D \to D^\#$ and
+a concretization function $\gamma : D^\# \to D$, such that if $\alpha(x)$ is less-than
+or equal to $x^\#$, then x is less-than or equal to $\gamma(x^\#)$, and vice versa.
+
+For example, our concrete domain could be powersets of integers, and the abstract domain
+can be $\{\bottom, -, 0, +, \top\}$. Another well-known abstract domain is the domain of intervals.
+\end{enumerate}

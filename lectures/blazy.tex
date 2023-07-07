@@ -5,3 +5,34 @@
 	Deductive verification provides very strong guarantees that software is bug-free. Since the verification is usually done at the source level, the compiler becomes a weak link in the production of software. Verifying the compiler itself provides guarantees that no errors are introduced during compilation.
 This course will first introduce the basics of verified compilation, using the Coq theorem prover. Then, it will present CompCert, a fully verified compiler for C that is actually usable on real source code and that produces decent target code on real-world architectures. More generally, this approach opens the way to the verification of software tools involved in the production and verification of software.
 \end{abstract}
+\subsection{Overview}
+Formal methods give us strong guarantees about the correctness of our programs.
+Examples for formal methods techniques are model checking, static analysis,
+type systems and more. We wish to prove the correctness of our programs, in a way
+that produces a proof certificate, that is conducted with mathematical rigor and
+probably either an automated software tool (for example, Z3) or an interactive one
+(for example, Coq).
+
+Compilers are just complicated problems, but their specification in human language
+is easy: ``the generated code has the semantocs of the translated program''.
+This course will present the \cc formally verified compiler, which is an optmizing
+compiler targeting several architectures, that is indeed programmed and verified
+using the Coq proof assistant,
+
+The first step for verifying a compiler is mechanizing the semantics:
+the semantics of the generated assembly language was modeled using
+an inductive datatype\footnote{The inductivity was not used.}.
+
+The semantics of the language can then be given as small-step semantics.
+In \cc this is done in the file \lstinline{Compiler.v}. The semantics
+of a program is computed by considering the transitive closure of
+the small-step semantics relation.
+
+We would like to preserve \emph{observable} behaviors. What are observable
+behaviors?
+\begin{itemize}
+\item Normal termination and the result thereof.
+\item Divergence.
+\item ``Going wrong''.
+\end{itemize}
+

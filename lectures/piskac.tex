@@ -1,5 +1,154 @@
 \section{Program Synthesis}
 \subauthor{Ruzica Piskac}{Yale University}
-\begin{abstract}
-	\todo{Fill in}
-\end{abstract}
+\plquote{``Of course LTL is decidable! It's double-exponential complete.''}
+\subsection{Overview}
+
+The idea: Generally, the way we implement systems is by writing a specification, and then
+writing an implementation, and then verify both the specification and the implementation.
+Program synthesis works by constructing \emph{correct} programs automatically
+from the specification.
+
+This allows us to write less code and get better results, and also have provably
+correct programs.
+
+Church synthesis problem (1957): Given a requirement $\varphi$ on the
+input-output behavior of a Boolean circuit, compute a circuit $C$
+satisfying the condition.
+
+Reactive synthesis: Given an LTL specification, automatically compute the progrm
+that satisfies the specification.
+
+The basic definition of a synthesis problem: Given a specification $\varphi$,
+return a program that satisfies the specification, or declare that one does not exist.
+
+\subsection{LTL}
+
+LTL (Linear Temporal Logic) concerns itself with infinite paths in a state system. 
+Syntax and semantics of LTL path formulas:
+\[
+\begin{array}{cc}
+\text{LTL}&\text{Meaning} \\
+p & p \\
+X \varphi & \text{in next state it holds that~} \varphi \\
+G \varphi & \text{in all following states it holds that~} \varphi \\
+F \varphi & \text{in some following state it holds that~} \varphi \\
+\varphi U \psi & \text{in some following state it holds that~} \psi \text{~and until then, it holds that~} \varphi
+\end{array}
+\]
+
+In addition, we can express $A\varphi$, where $\varphi$ is an LTL path formula, which means 
+``all paths out of a state satisfy $\varphi$''.
+
+We consider two types of questions:
+\begin{itemize}
+\item \textbf{Satisfiability:} Is there a \emph{trace} satisfying the spec?
+\item \textbf{Realizability:} Is there a \emph{system} satisfying the spec?
+\end{itemize}
+
+For example, consider the following LTL specification $G ((p_1 \to q_1) \wedge (p_2 \to q_2) \wedge \neg (q_1 \wedge q_2))$
+where $p_1, p_2$ are inputs and $q_1, q_2$ are outputs.
+This is satisfiable, for example by the trace that never satisfies $p_1$ or $p_2$.
+However, it is not realizable because we do not control $p_1$ or $p_2$: they may
+be both on at the same time.
+
+Another example: $G (p \leftrightarrow Xq)$. This is obviously satisfiable, but it 
+is not realizable because the system cannot look into the future.
+
+\subsection{Reactive Synthesis}
+Synthesis can be seen as a game: the verifier proves inputs and the prover provides outputs.
+The system is good if it fulfills the spec for all possible inputs.
+
+In some cases, the synthesis problem is easy to formulate but hard to solve:
+for example, consider the synthesis problem in which the inputs are
+black moves in a game of Chess, and the outputs are white moves. The
+system would be considered good if whenever the black moves
+are legal, the white moves are legal as well and white reaches
+checkmate.
+
+We define the model of \emph{deterministic B\"uchi automaton}: 
+an automaton on infinite words that accepts an infinite word
+if it passes through an accepting state infinitely many times.
+
+By constructing the B\"uchi automaton for an LTL formula,
+we can create a model that can then be translated to code.
+
+This is the method of reactive synthesis: we give a specification,
+create a game (which is represented by the B\"uchi automaton), 
+solve it and create a system.
+
+Formally, a game is a 4-tuple $A = (V_0, V_1, E, F)$ such that $V_i$ is the $i$\textsuperscript{th}'s player's states,
+$E \subseteq (V_0 \times V_1) \cup (V_1 \times V_0)$ is the set of allowed transitions and $F$ is the 
+winning condition. A run is an infinite set of states
+connected by edges from $E$.
+
+Winning conditions:
+\begin{itemize}
+\item \textbf{Reachability}: Player 1 wins if the run passes through a state in some set $F$.
+\item \textbf{B\"uchi}: Player 1 wins if the run passes infinitely many times through a state in some set $F$.
+\item \textbf{Parity}: Let $C: V_0 \cup V_1 \to \N$ be a coloring function. 
+Player 1 wins if the color with the highest number that is seen, is seen an even number of times.
+\end{itemize}
+
+Now, we can translate an LTL formula to a nondeterministic B\"uchi automaton, and then determinize it
+into a deterministic \emph{parity} automaton. Then, rephrase as a parity game and solve.
+
+We have to go through this determinization process because NBAs may have false negatives due to
+the multiple possible runs for a set of inputs. However, there exist LTL formulas with no
+equivalent DBA.
+
+\subsection{Deductive Synthesis}
+Initially, computers and tools were too weak for synthesis. In 1969, Cordell Green tried
+to synthesize a sorting algorithm using a then-state of the art theorem solver.
+It did not work, but the work contained a full method of extracting a program from a resolution
+proof.
+
+Today, most synthesis tools are based on SMT solvers. Artificial intelligence tools also play an important part.
+Synthesis can be used to generate parts of the code, or entire algorithms. SMT solvers are
+tools used to prove arbitrary theorems and try to decide arbitrary formulas. SMT solvers combine
+propositional solving techniques with various \emph{theories}.
+
+For example, consider having some \lstinline{big_set} variable in a program, and seeking
+two \emph{disjoint} sets \lstinline{set_a, set_b} with the same size such that their union
+is the big set. Solving this logical constraint to get actual code corresponds to constructively solving
+the quantifier elimination problem $\exists x. F(x, a)$.
+
+We define the \textbf{synthesis procedure} as one taking as input formula $F(x, a)$ and having
+as outputs:
+\begin{itemize}
+\item A precondition formula $\mathrm{pre}(a)$
+\item A list of terms $\Psi$
+\end{itemize}
+Such that the following holds: $\exists x. F(x, a) \leftrightarrow \mathrm{pre}(a) \leftrightarrow F[x/\Psi]$.
+
+The synthesis procedure for the linear integer arithmetic can be implemented by
+inlining equality constraints and passing inequality constraints to an SMT solver.
+This is especially useful due to arithmetization: it is possible to reduce
+many problems to integer arithmetic problems.
+
+\subsection{Syntax-Guided Synthesis}
+
+\textsc{Sketch} is a synthesis method that was pioneered by Armando Solar-Lezama when he was a PhD student.
+The basic idea is giving a partial program with \emph{holes}, and then \textsc{Sketch} will look through all
+possible ways to fill the hole such that the specification is satisfied.
+This opened the door for additional SyGuS paradigms: Syntax-Guided Synthesis. These are
+synthesis methods that are based on the syntax on the synthesized program.
+
+One possible mode of specification is PBE: Programming by Example. This mode specifies the synthesis problem by giving a few
+examples of input-output pairs. For example, \textsc{FlashFill} in Microsoft Excel\textsc{TM} is a PBE synthesizer.
+
+A use for PBE and SyGuS is superoptimization: try to synthesize the shortest or most efficient program that
+is equivalent to a given problem. Another use is invariant generation: trying to find loop invariants
+for given loops.
+
+Formally, SyGuS is defined as finding a program snippet $e$ such that:
+\begin{itemize}
+\item $e\in E$ (syntactic constraint)
+\item $e \models \varphi$ (semantic contraint)
+\end{itemize}
+This is a core computational problem in many synthesis tools and applications.
+Like SMT problems can be phrased in the SMT-LIB input format, there is SYNTH-LIB
+for synthesis problems, which can be read by tools such as CVC5.
+
+One possible method for solving synthesis problems is CEGIS: counterexample-guided inductive synthesis.
+More methods are enumerative (by exhaustive search), symbolic (using constraint solving) and
+stochastic (a probabilistic walk).
